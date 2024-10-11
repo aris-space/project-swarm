@@ -1,3 +1,9 @@
+# @ SWARM Team
+=> Pls ask Nik to make sure everything is set up correctly before you start working.
+
+
+
+default main from ETH:
 # Main
 
 
