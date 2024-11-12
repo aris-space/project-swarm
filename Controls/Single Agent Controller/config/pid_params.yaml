@@ -1,0 +1,27 @@
+depth_controller:
+  kp: 5
+  ki: 0.0
+  kd: 0.0
+depth_rate_controller:
+  kp: 5
+  ki: 0.0
+  kd: 0.0
+
+pitch_controller:
+  kp: 5
+  ki: 0.0
+  kd: 0.0
+pitch_rate_controller:
+  kp: 5
+  ki: 0.0
+  kd: 0.0
+
+roll_controller:
+  kp: 5
+  ki: 0.0
+  kd: 0.0
+roll_rate_controller:
+  kp: 5
+  ki: 0.0
+  kd: 0.0
+

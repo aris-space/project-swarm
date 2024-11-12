@@ -1,0 +1,22 @@
+# Physical properties
+mass: 20.0                          # Mass in kg
+inertia:
+  ixx: 1.2                          # Moment of inertia around x-axis
+  iyy: 1.2                          # Moment of inertia around y-axis
+  izz: 2.5                          # Moment of inertia around z-axis
+
+# Environmental conditions
+buoyancy_offset: 5.0                # Buoyancy in Newtons (to maintain neutral buoyancy)
+drag_coefficients:
+  x: 0.8
+  y: 0.8
+  z: 1.0
+
+# Sampling/Processing Frequencies:
+loc_freq: 5
+llc_freq: 400
+IMU_freq: 100
+
+# Inaccuracies
+loc_inacc: 0
+IMU_inacc: 0
