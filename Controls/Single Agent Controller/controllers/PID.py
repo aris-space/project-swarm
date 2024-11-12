@@ -8,7 +8,7 @@ class PID:
         self.last_error = 0
         # Initialize other variables like integral, last_error, etc.
         
-    def update(self, current_value, target_value, dt):
+    def update(self, target_value, current_value, dt):
         self.target_value = target_value
         error = target_value - current_value
 

@@ -1,8 +1,9 @@
-from controllers.LLC import LLC
-from controllers.PID import PID
+from controllers.llc import LLC
+from controllers.pid import PID
 import yaml
 import time
 import os
+import matplotlib.pyplot as plt
 
 def load_config(file_path):
     with open(file_path, 'r') as file:
@@ -19,33 +20,14 @@ if __name__ == "__main__":
     pid_params = load_config(pid_params_path)
     llc_config = load_config(llc_config_path)
 
-    current_state = {'depth': 10, 'depth_rate': 0.0}
-    target_state = {'depth': 12}
+    current_state = {'depth': -10, 'depth_rate': 0.0}
     dt = 0.001  # Time step
 
     # Initialize 6-DOF Controller
     llc = LLC(pid_params)
-
-    """
-
-    with open("log.txt", "w") as log_file:
-
-        for _ in range(5000):  # Run for 100 iterations as an example
-            thrust_z = llc.update_all(target_state, current_state)
-
-            log_file.write(f"Current State: {current_state}, Thrust in z direction: {thrust_z}\n")
-            
-            # Simulate updating the current state (this should be replaced with actual sensor data)
-            current_state['depth'] += current_state['depth_rate'] * dt
-            current_state['depth_rate'] += thrust_z * dt
-            
-            # Wait for the next time step
-            time.sleep(dt)
-
-    """
             
 
-    planner_freq = 0.2
+    planner_freq = 0.1
     t_planner = (1/planner_freq)
     loc_freq = 5
     t_loc = (1/loc_freq)
@@ -60,17 +42,53 @@ if __name__ == "__main__":
     num_planner_updates = 1
     runtime = num_planner_updates//planner_freq
 
+    current_detectable_depth_state = {}
+    depths = [] 
+
     with open(log_file_path, "w") as log_file:
-        for _ in range(num_planner_updates): #planner_freq*runtime
-            for _ in range (int(loc_freq/planner_freq)):
+        for _ in range(num_planner_updates): #planner update
+
+            target_state = {'depth': -20}
+            llc.depth_ctrl.update_dd(target_state['depth'])
+
+            for _ in range (int(loc_freq/planner_freq)): #loc_update
+
+                current_detectable_depth_state['depth'] = current_state['depth']
+                llc.depth_ctrl.update_cd(current_detectable_depth_state['depth'])
+                llc.depth_ctrl.update_ddr()
+
                 for _ in range(imu_freq//loc_freq):
+
+                    current_detectable_depth_state['depth_rate'] = current_state['depth_rate']
+                    llc.depth_ctrl.update_cdr(current_detectable_depth_state['depth_rate'])
+
                     for _ in range(llc_freq//imu_freq):
-                        thrust_z = llc.update_all(target_state, current_state)
-                        log_file.write(f"Current State: {current_state}, Thrust in z direction: {thrust_z}, desired depth: {llc.depth_ctrl.desired_depth}, desired depth rate: {llc.depth_ctrl.desired_depth_rate}\n")
+
+                        thrust_z = llc.depth_ctrl.update_dtz()
+
+                        #write the current state to a dictionary with key as time
+
+                        log_file.write(f"Current Depth: {current_state['depth']}, Current Depth Rate: {current_state['depth_rate']}, Thrust in z direction: {thrust_z}, desired depth: {llc.depth_ctrl.desired_depth}, desired depth rate: {llc.depth_ctrl.desired_depth_rate}\n")
+                        
+                        depths.append(current_state['depth'])
+
                         #updatng current state
                         current_state['depth'] += current_state['depth_rate'] * t_llc
                         current_state['depth_rate'] += thrust_z * t_llc
+                        
                         # Wait for the next time step
-                        time.sleep(t_llc)
+                        #time.sleep(t_llc)
+
+
+    times = [i for i in range(len(depths))]
 
     
+
+
+    plt.figure()
+    plt.plot(times, depths)
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Depth (m)')
+    plt.title('Depth over Time')
+    plt.grid(True)
+    plt.show()
