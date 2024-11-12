@@ -41,9 +41,8 @@ class depth_ctrl:
         self.current_depth = current_state['depth']
         return self.current_depth
 
-    def update_ddr(self, target_state): #desired depth rate, should be called after new depth data is given
+    def update_ddr(self): #desired depth rate, should be called after new depth data is given
         self.desired_depth_rate = self.depth_controller.update(self.desired_depth, self.current_depth, self.dt)
-        target_state['depth_rate'] = self.desired_depth_rate
         return self.desired_depth_rate
    
     def update_cdr(self, current_state): #current depth rate, should be called if new depth rate data is available
@@ -59,7 +58,7 @@ class depth_ctrl:
         self.update_cd(current_state)
         self.update_dd(target_state)
         # Update depth rate
-        self.update_ddr(target_state)
+        self.update_ddr()
         self.update_cdr(current_state)
         # Update thrust_z
         thrust_z = self.update_dtz()
