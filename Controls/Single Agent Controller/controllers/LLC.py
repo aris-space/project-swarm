@@ -17,36 +17,51 @@ class LLC:
 
         self.depth_ctrl = depth_ctrl(pid_params)
     
-    def update(self, current_state, target_state, dt):
+    def update_all(self, target_state, current_state):
         # Update each PID based on current state and target state
-        thrust_z = self.depth_ctrl.update(current_state, target_state, dt)        
+        thrust_z = self.depth_ctrl.update_all(target_state, current_state)        
         return thrust_z
 
 class depth_ctrl:
     def __init__(self, pid_params):
         self.depth_controller = PID(**pid_params['depth_controller'])
         self.depth_rate_controller = PID(**pid_params['depth_controller'])
+        self.current_depth = 0
+        self.desired_depth = 0
+        self.current_depth_rate = 0
+        self.desired_depth_rate = 0
+        self.desired_thrust_z = 0
+        self.dt = 0.001
+
+    def update_dd(self, target_state): #desired depth, should be called when new command is given
+        self.desired_depth = target_state['depth']
+        return self.desired_depth
+
+    def update_cd(self, current_state): #current depth, should be called if new depth data is available
+        self.current_depth = current_state['depth']
+        return self.current_depth
+
+    def update_ddr(self, target_state): #desired depth rate, should be called after new depth data is given
+        self.desired_depth_rate = self.depth_controller.update(self.desired_depth, self.current_depth, self.dt)
+        target_state['depth_rate'] = self.desired_depth_rate
+        return self.desired_depth_rate
+   
+    def update_cdr(self, current_state): #current depth rate, should be called if new depth rate data is available
+        self.current_depth_rate = current_state['depth_rate']
+        return self.current_depth_rate
+    
+    def update_dtz(self): #desired thrust z, should be called after desired depth rate is calculated
+        self.desired_thrust_z = self.depth_rate_controller.update(self.desired_depth_rate, self.current_depth_rate, self.dt)
+        return self.desired_thrust_z
         
-    def update(self, current_state, target_state, dt):
+    def update_all(self, target_state, current_state): #should not be used in the end
         # Get current and target depths
-        current_depth = current_state['depth']
-        desired_depth = target_state['depth']
-
-        # Outer loop PID: depth controller calculates desired depth rate
-        desired_depth_rate = self.depth_controller.update(desired_depth, current_depth, dt)
-        print(f"Desired Depth Rate: {desired_depth_rate}")
-
-        #print(f"Desired Depth Rate: {desired_depth_rate}")
-        #print(f"Current Depth Rate: {current_state['depth_rate']}")
-
-        # Get current depth rate
-        current_depth_rate = current_state['depth_rate']
-
-        # Inner loop PID: depth rate controller calculates Thrust in z direction
-        #depth_rate_error = desired_depth_rate - current_depth_rate
-
-        #print(f"depth_rate_error: {depth_rate_error}")
-
-        thrust_z = self.depth_rate_controller.update(desired_depth_rate, current_depth_rate, dt)
+        self.update_cd(current_state)
+        self.update_dd(target_state)
+        # Update depth rate
+        self.update_ddr(target_state)
+        self.update_cdr(current_state)
+        # Update thrust_z
+        thrust_z = self.update_dtz()
 
         return thrust_z

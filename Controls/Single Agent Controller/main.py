@@ -2,15 +2,21 @@ from controllers.LLC import LLC
 from controllers.PID import PID
 import yaml
 import time
+import os
 
 def load_config(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
 if __name__ == "__main__":
+    # Construct absolute paths
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    pid_params_path = os.path.join(base_dir, 'config', 'pid_params.yaml')
+    llc_config_path = os.path.join(base_dir, 'config', 'llc_config.yaml')
+
     # Load configurations
-    pid_params = load_config("config/PID_params.yaml")
-    llc_config = load_config("config/LLC_config.yaml")
+    pid_params = load_config(pid_params_path)
+    llc_config = load_config(llc_config_path)
 
     current_state = {'depth': 10, 'depth_rate': 0.0}
     target_state = {'depth': 12, 'depth_rate': 0.0}
@@ -22,7 +28,7 @@ if __name__ == "__main__":
     with open("log.txt", "w") as log_file:
         #Update the controller for 100 iterations
         for _ in range(5000):  # Run for 100 iterations as an example
-            thrust_z = llc.update(current_state, target_state, dt)
+            thrust_z = llc.update_all(target_state, current_state)
 
             log_file.write(f"Current State: {current_state}, Thrust in z direction: {thrust_z}\n")
             
