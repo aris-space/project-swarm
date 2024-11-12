@@ -44,6 +44,7 @@ if __name__ == "__main__":
 
     current_detectable_depth_state = {}
     depths = [] 
+    detectable_depths = []
 
     with open(log_file_path, "w") as log_file:
         for _ in range(num_planner_updates): #planner update
@@ -71,6 +72,7 @@ if __name__ == "__main__":
                         log_file.write(f"Current Depth: {current_state['depth']}, Current Depth Rate: {current_state['depth_rate']}, Thrust in z direction: {thrust_z}, desired depth: {llc.depth_ctrl.desired_depth}, desired depth rate: {llc.depth_ctrl.desired_depth_rate}\n")
                         
                         depths.append(current_state['depth'])
+                        detectable_depths.append(current_detectable_depth_state['depth'])
 
                         #updatng current state
                         current_state['depth'] += current_state['depth_rate'] * t_llc
@@ -82,11 +84,11 @@ if __name__ == "__main__":
 
     times = [i for i in range(len(depths))]
 
-    
 
-
+    plt.plot(times, detectable_depths, label='Detectable Depth')
+    plt.legend()
     plt.figure()
-    plt.plot(times, depths)
+    plt.plot(times, depths, label='Depth')
     plt.xlabel('Time (ms)')
     plt.ylabel('Depth (m)')
     plt.title('Depth over Time')
