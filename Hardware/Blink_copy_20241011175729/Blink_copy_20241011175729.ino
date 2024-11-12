@@ -14,7 +14,7 @@
   by Scott Fitzgerald
   modified 2 Sep 2016
   by Arturo Guadalupi
-  modified 8 Sep 2016
+  modified 8 Sep 2016jzgtjgjgjh
   by Colby Newman
 
   This example code is in the public domain.
@@ -26,6 +26,7 @@
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_BUILTIN, OUTPUT);
+  delay(1000);
 }
 
 // the loop function runs over and over again forever
