@@ -22,8 +22,6 @@ class LLC:
         self.yaw_ctrl = angle_ctrl(pid_params['yaw'], llc_freq)
     
     def update_IMU(self, state):
-        #self.depth_ctrl.current_detectable_depth_state['depth_rate'] = state['dz']
-        #self.depth_ctrl.update_cdr(self.depth_ctrl.current_detectable_depth_state['depth_rate'])
 
         self.roll_ctrl.update_cda(state['roll'])
         self.roll_ctrl.update_dar()
@@ -42,11 +40,13 @@ class LLC:
 
         self.yaw_ctrl.update_cdar(state['dyaw'])
 
+        self.depth_ctrl.update_cdd(state['z'])
+        self.depth_ctrl.update_ddr()
+
+        self.depth_ctrl.update_cddr(state['dz'])
+
     def update_loc(self, state):
         #update loc data
-        self.depth_ctrl.current_detectable_depth_state['depth'] = state['z']
-        self.depth_ctrl.update_cd(self.depth_ctrl.current_detectable_depth_state['depth'])
-        self.depth_ctrl.update_ddr()
         pass
 
     def update_torques(self):
@@ -56,25 +56,16 @@ class LLC:
         torque_z = self.yaw_ctrl.update_dtau()
         return torque_y, torque_x, torque_z
     
-    def update_angles_and_rates(self, states):
-        self.roll_ctrl.update_angle_and_rate(states[-1]['roll'], states[-1]['droll'], states[-1]['torquey'])
-        self.pitch_ctrl.update_angle_and_rate(states[-1]['pitch'], states[-1]['dpitch'], states[-1]['torquex'])
-        self.yaw_ctrl.update_angle_and_rate(states[-1]['yaw'], states[-1]['dyaw'], states[-1]['torquez'])
-
-    def update_all(self, target_state, current_state):
-        # Update each PID based on current state and target state
-        thrust_z = self.depth_ctrl.update_all(target_state, current_state)        
-        return thrust_z
-    
-    def update_depth(self, ):
+    def update_thrust_z(self):
         # Update depth PID based on current state and target state
-        thrust_z = self.depth_ctrl.update_dtz()
+        thrust_z = self.depth_ctrl.update_dt()
         return thrust_z
     
-    def update_forwards():
-        pass
-
     def check_orientation():
+        # Check if the vehicle is oriented correctly
+        return False
+    
+    def update_thrust_x(self):
         pass
 
     def update_target_state(self, target_state):
@@ -84,8 +75,12 @@ class LLC:
         self.pitch_ctrl.update_da(target_state['pitch'])
         self.yaw_ctrl.update_da(target_state['yaw'])
 
-    def update_desired_rates(self):
+    def update_desired_arates(self):
         # Update desired angles and rates for each PID
         self.roll_ctrl.update_dar()
         self.pitch_ctrl.update_dar()
         self.yaw_ctrl.update_dar()
+
+    def update_desired_drate(self):
+        # Update desired angles and rates for each PID
+        self.depth_ctrl.update_ddr()

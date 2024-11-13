@@ -40,47 +40,7 @@ def log_state(log_file, current_state, thrust_z, llc):
                    f"Thrust in z direction: {thrust_z}, desired depth: {llc.depth_ctrl.desired_depth}, "
                    f"desired depth rate: {llc.depth_ctrl.desired_depth_rate}\n")
 
-def update_current_state(current_state, thrust_z, torque_y, t_llc):
-    current_state['z'] += current_state['dz'] * t_llc
-    current_state['dz'] += thrust_z * t_llc
-    current_state['roll'] += current_state['droll'] * t_llc
-    current_state['droll'] += torque_y * t_llc
 
-def update_state(states, t_llc): #to be replaced by RK4 => for now euler backwards
-    append_state(array=states,
-                #z= states[-1]['z'] + states[-1]['dz'] * t_llc,
-                #dz = states[-1]['dz'] + states[-1]['thrustz'] * t_llc,
-                droll = states[-1]['droll'] + states[-1]['torquey'] * t_llc,
-                roll = states[-1]['roll'] + (states[-1]['droll'] + states[-1]['torquey'] * t_llc) * t_llc,
-                dpitch = states[-1]['dpitch'] + states[-1]['torquex'] * t_llc,
-                pitch = states[-1]['pitch'] + (states[-1]['dpitch'] + states[-1]['torquex'] * t_llc) * t_llc,
-                dyaw = states[-1]['dyaw'] + states[-1]['torquez'] * t_llc,
-                yaw = states[-1]['yaw'] + (states[-1]['dyaw'] + states[-1]['torquez'] * t_llc) * t_llc,
-                )
-    
-
-
-def plot_results(times, llc):
-    plt.figure()
-    plt.plot(times, llc.roll_ctrl.detectable_angles, label='Detectable Roll')
-    plt.legend()
-    plt.figure()
-    plt.plot(times, llc.roll_ctrl.angles, label='Roll')
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Roll (degrees)')
-    plt.title('Roll over Time')
-    plt.grid(True)
-
-    plt.figure()
-    plt.plot(times, llc.depth_ctrl.detectable_depths, label='Detectable Depth')
-    plt.legend()
-    plt.figure()
-    plt.plot(times, llc.depth_ctrl.depths, label='Depth')
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Depth (m)')
-    plt.title('Depth over Time')
-    plt.grid(True)
-    plt.show()
 
 def append_state(array, x=0, y=0, z=0, roll=0, pitch=0, yaw=0, dx=0, dy=0, dz=0, droll=0, dpitch=0, dyaw=0, thrustx=0, thrusty=0, thrustz=0, torquex=0, torquey=0, torquez=0):
     # Create a dictionary with 6-DOF and derivatives
@@ -99,3 +59,57 @@ def append_state(array, x=0, y=0, z=0, roll=0, pitch=0, yaw=0, dx=0, dy=0, dz=0,
     array = np.append(array, new_row)
     
     return array
+
+def next_state(states, t_llc):
+    new_state = states[-1].copy()
+    states = np.append(states, new_state)
+
+    states[-1]['droll'] = states[-2]['droll'] + states[-2]['torquey'] * t_llc
+    states[-1]['roll'] = states[-2]['roll'] + (states[-2]['droll'] + states[-2]['torquey'] * t_llc) * t_llc
+    states[-1]['dpitch'] = states[-2]['dpitch'] + states[-2]['torquex'] * t_llc
+    states[-1]['pitch'] = states[-2]['pitch'] + (states[-2]['dpitch'] + states[-2]['torquex'] * t_llc) * t_llc
+    states[-1]['dyaw'] = states[-2]['dyaw'] + states[-2]['torquez'] * t_llc
+    states[-1]['yaw'] = states[-2]['yaw'] + (states[-2]['dyaw'] + states[-2]['torquez'] * t_llc) * t_llc
+    states[-1]['dz'] = states[-2]['dz'] + states[-2]['thrustz'] * t_llc
+    states[-1]['z'] = states[-2]['z'] + (states[-2]['dz'] + states[-2]['thrustz'] * t_llc) * t_llc
+
+
+    return states
+
+def plot_results(states, log_file_path):
+        # Read the log file and extract roll values
+    timestamps = []
+    roll_values = []
+    yaw_values = []
+    pitch_values = []
+    depth_values = []
+
+    #store all values of each state in the states in a csv file
+    with open('states.csv', 'w') as f:
+        for state in states:
+            f.write("%s\n" % state)
+
+
+    with open(log_file_path, "r") as log_file:
+        i = 0
+        for line in log_file:
+            state = eval(line.strip())
+            timestamps.append(i)
+            roll_values.append(state['roll'])
+            pitch_values.append(state['pitch'])
+            yaw_values.append(state['yaw'])
+            depth_values.append(state['z'])
+            i+=1
+
+    # Plot roll values over time
+    plt.figure()
+    plt.plot(timestamps, roll_values, label='Roll')
+    plt.plot(timestamps, pitch_values, label='Pitch')
+    plt.plot(timestamps, yaw_values, label='Yaw')
+    plt.plot(timestamps, depth_values, label='Depth')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Roll (degrees)')
+    plt.title('Roll over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
