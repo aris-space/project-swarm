@@ -20,7 +20,7 @@ if __name__ == "__main__":
     pid_params = load_config(pid_params_path)
     llc_config = load_config(llc_config_path)
 
-    current_state = {'depth': -10, 'depth_rate': 0.0}
+    current_state = {'depth': -10, 'depth_rate': 0.0, 'roll': 5.0, 'roll_rate': 0.0}  # Initial state
     dt = 0.001  # Time step
 
     # Initialize 6-DOF Controller
@@ -46,11 +46,17 @@ if __name__ == "__main__":
     depths = [] 
     detectable_depths = []
 
+    current_detectable_roll_state = {}
+    rolls = [] 
+    detectable_rolls = []
+
     with open(log_file_path, "w") as log_file:
         for _ in range(num_planner_updates): #planner update
 
             target_state = {'depth': -20}
             llc.depth_ctrl.update_dd(target_state['depth'])
+            target_state = {'roll': 0}
+            llc.roll_ctrl.update_dd(target_state['roll'])
 
             for _ in range (int(loc_freq/planner_freq)): #loc_update
 
@@ -63,20 +69,35 @@ if __name__ == "__main__":
                     current_detectable_depth_state['depth_rate'] = current_state['depth_rate']
                     llc.depth_ctrl.update_cdr(current_detectable_depth_state['depth_rate'])
 
+
+                    current_detectable_roll_state['roll'] = current_state['roll']
+                    llc.roll_ctrl.update_cd(current_detectable_roll_state['roll'])
+                    llc.roll_ctrl.update_ddr()
+
+                    current_detectable_roll_state['roll_rate'] = current_state['roll_rate']
+                    llc.roll_ctrl.update_cdr(current_detectable_roll_state['roll_rate'])                   
+
                     for _ in range(llc_freq//imu_freq):
 
                         thrust_z = llc.depth_ctrl.update_dtz()
+                        torque_y = llc.roll_ctrl.update_dtauy()
 
                         #write the current state to a dictionary with key as time
 
                         log_file.write(f"Current Depth: {current_state['depth']}, Current Depth Rate: {current_state['depth_rate']}, Thrust in z direction: {thrust_z}, desired depth: {llc.depth_ctrl.desired_depth}, desired depth rate: {llc.depth_ctrl.desired_depth_rate}\n")
                         
+                        rolls.append(current_state['roll'])
+                        detectable_rolls.append(current_detectable_roll_state['roll'])
+
                         depths.append(current_state['depth'])
                         detectable_depths.append(current_detectable_depth_state['depth'])
 
                         #updatng current state
                         current_state['depth'] += current_state['depth_rate'] * t_llc
                         current_state['depth_rate'] += thrust_z * t_llc
+
+                        current_state['roll'] += current_state['roll_rate'] * t_llc
+                        current_state['roll_rate'] += torque_y * t_llc
                         
                         # Wait for the next time step
                         #time.sleep(t_llc)
@@ -84,7 +105,17 @@ if __name__ == "__main__":
 
     times = [i for i in range(len(depths))]
 
+    plt.figure()
+    plt.plot(times, detectable_rolls, label='Detectable Roll')
+    plt.legend()
+    plt.figure()
+    plt.plot(times, rolls, label='Roll')
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Roll (degrees)')
+    plt.title('Roll over Time')
+    plt.grid(True)
 
+    plt.figure()
     plt.plot(times, detectable_depths, label='Detectable Depth')
     plt.legend()
     plt.figure()
