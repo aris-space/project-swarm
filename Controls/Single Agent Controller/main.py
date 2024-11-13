@@ -1,127 +1,69 @@
 from controllers.llc import LLC
 from controllers.pid import PID
+from utils.helpers import *
+from config.constants import *
 import yaml
 import time
 import os
 import matplotlib.pyplot as plt
 
-def load_config(file_path):
-    with open(file_path, 'r') as file:
-        return yaml.safe_load(file)
-
 if __name__ == "__main__":
-    # Construct absolute paths
+    
+    # Initialize paths & load config files
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    pid_params_path = os.path.join(base_dir, 'config', 'pid_params.yaml')
-    llc_config_path = os.path.join(base_dir, 'config', 'llc_config.yaml')
-    log_file_path = os.path.join(base_dir, 'log.txt')
+    pid_params_path, llc_config_path, log_file_path = initialize_paths(base_dir)
 
-    # Load configurations
     pid_params = load_config(pid_params_path)
     llc_config = load_config(llc_config_path)
 
-    current_state = {'depth': -10, 'depth_rate': 0.0, 'roll': 5.0, 'roll_rate': 0.0}  # Initial state
-    dt = 0.001  # Time step
+    # Initialize Current State
+    current_state = {'depth': -10, 'depth_rate': 0.0, 'roll': 5.0, 'roll_rate': 0.0}
 
-    # Initialize 6-DOF Controller
-    llc = LLC(pid_params)
-            
+    # Initialize Time Steps
+    runtime = num_planner_updates // planner_freq
+    t_planner, t_loc, t_imu, t_llc = initialize_time_steps(planner_freq, loc_freq, imu_freq, llc_freq)
 
-    planner_freq = 0.1
-    t_planner = (1/planner_freq)
-    loc_freq = 5
-    t_loc = (1/loc_freq)
-    imu_freq = 200
-    t_imu = (1/imu_freq)
-    llc_freq = 400
-    t_llc = (1/llc_freq)
+    # Initialize LLC
+    llc = LLC(pid_params, llc_freq)
 
-    print(f"Planner freq: {planner_freq}, Loc freq: {loc_freq}, IMU freq: {imu_freq}, LLC freq: {llc_freq}")
-    print(f"t_planner: {t_planner}, t_loc: {t_loc}, t_imu: {t_imu}, t_llc: {t_llc}")
-    
-    num_planner_updates = 1
-    runtime = num_planner_updates//planner_freq
-
-    current_detectable_depth_state = {}
-    depths = [] 
-    detectable_depths = []
-
-    current_detectable_roll_state = {}
-    rolls = [] 
-    detectable_rolls = []
+    # Run the simulation
 
     with open(log_file_path, "w") as log_file:
-        for _ in range(num_planner_updates): #planner update
-
+        for _ in range(num_planner_updates):
             target_state = {'depth': -20}
             llc.depth_ctrl.update_dd(target_state['depth'])
             target_state = {'roll': 0}
             llc.roll_ctrl.update_dd(target_state['roll'])
 
-            for _ in range (int(loc_freq/planner_freq)): #loc_update
-
-                current_detectable_depth_state['depth'] = current_state['depth']
-                llc.depth_ctrl.update_cd(current_detectable_depth_state['depth'])
+            for _ in range(int(loc_freq / planner_freq)):
+                llc.depth_ctrl.current_detectable_depth_state['depth'] = current_state['depth']
+                llc.depth_ctrl.update_cd(llc.depth_ctrl.current_detectable_depth_state['depth'])
                 llc.depth_ctrl.update_ddr()
 
-                for _ in range(imu_freq//loc_freq):
+                for _ in range(imu_freq // loc_freq):
+                    llc.depth_ctrl.current_detectable_depth_state['depth_rate'] = current_state['depth_rate']
+                    llc.depth_ctrl.update_cdr(llc.depth_ctrl.current_detectable_depth_state['depth_rate'])
 
-                    current_detectable_depth_state['depth_rate'] = current_state['depth_rate']
-                    llc.depth_ctrl.update_cdr(current_detectable_depth_state['depth_rate'])
-
-
-                    current_detectable_roll_state['roll'] = current_state['roll']
-                    llc.roll_ctrl.update_cd(current_detectable_roll_state['roll'])
+                    llc.roll_ctrl.current_detectable_angle_state['roll'] = current_state['roll']
+                    llc.roll_ctrl.update_cd(llc.roll_ctrl.current_detectable_angle_state['roll'])
                     llc.roll_ctrl.update_ddr()
 
-                    current_detectable_roll_state['roll_rate'] = current_state['roll_rate']
-                    llc.roll_ctrl.update_cdr(current_detectable_roll_state['roll_rate'])                   
+                    llc.roll_ctrl.current_detectable_angle_state['roll_rate'] = current_state['roll_rate']
+                    llc.roll_ctrl.update_cdr(llc.roll_ctrl.current_detectable_angle_state['roll_rate'])
 
-                    for _ in range(llc_freq//imu_freq):
-
+                    for _ in range(llc_freq // imu_freq):
                         thrust_z = llc.depth_ctrl.update_dtz()
-                        torque_y = llc.roll_ctrl.update_dtauy()
+                        torque_y = llc.roll_ctrl.update_dtau()
 
-                        #write the current state to a dictionary with key as time
+                        log_state(log_file, current_state, thrust_z, llc)
 
-                        log_file.write(f"Current Depth: {current_state['depth']}, Current Depth Rate: {current_state['depth_rate']}, Thrust in z direction: {thrust_z}, desired depth: {llc.depth_ctrl.desired_depth}, desired depth rate: {llc.depth_ctrl.desired_depth_rate}\n")
-                        
-                        rolls.append(current_state['roll'])
-                        detectable_rolls.append(current_detectable_roll_state['roll'])
+                        llc.roll_ctrl.angles.append(current_state['roll'])
+                        llc.roll_ctrl.detectable_angles.append(llc.roll_ctrl.current_detectable_angle_state['roll'])
 
-                        depths.append(current_state['depth'])
-                        detectable_depths.append(current_detectable_depth_state['depth'])
+                        llc.depth_ctrl.depths.append(current_state['depth'])
+                        llc.depth_ctrl.detectable_depths.append(llc.depth_ctrl.current_detectable_depth_state['depth'])
 
-                        #updatng current state
-                        current_state['depth'] += current_state['depth_rate'] * t_llc
-                        current_state['depth_rate'] += thrust_z * t_llc
+                        update_current_state(current_state, thrust_z, torque_y, t_llc)
 
-                        current_state['roll'] += current_state['roll_rate'] * t_llc
-                        current_state['roll_rate'] += torque_y * t_llc
-                        
-                        # Wait for the next time step
-                        #time.sleep(t_llc)
-
-
-    times = [i for i in range(len(depths))]
-
-    plt.figure()
-    plt.plot(times, detectable_rolls, label='Detectable Roll')
-    plt.legend()
-    plt.figure()
-    plt.plot(times, rolls, label='Roll')
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Roll (degrees)')
-    plt.title('Roll over Time')
-    plt.grid(True)
-
-    plt.figure()
-    plt.plot(times, detectable_depths, label='Detectable Depth')
-    plt.legend()
-    plt.figure()
-    plt.plot(times, depths, label='Depth')
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Depth (m)')
-    plt.title('Depth over Time')
-    plt.grid(True)
-    plt.show()
+    times = [i for i in range(len(llc.depth_ctrl.depths))]
+    plot_results(times, llc.roll_ctrl.detectable_angles, llc.roll_ctrl.angles, llc)

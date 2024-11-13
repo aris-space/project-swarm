@@ -12,11 +12,7 @@ drag_coefficients:
   y: 0.8
   z: 1.0
 
-# Sampling/Processing Frequencies:
-loc_freq: 5
-llc_freq: 400
-IMU_freq: 100
-
 # Inaccuracies
 loc_inacc: 0
 IMU_inacc: 0
+

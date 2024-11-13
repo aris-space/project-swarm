@@ -1,14 +1,18 @@
 from controllers.pid import PID
 class depth_ctrl:
-    def __init__(self, pid_params):
-        self.depth_controller = PID(**pid_params['depth_controller'])
-        self.depth_rate_controller = PID(**pid_params['depth_controller'])
+    def __init__(self, pid_params, controller_freq):
+        self.depth_controller = PID(**pid_params['abs'])
+        self.depth_rate_controller = PID(**pid_params['rate'])
         self.current_depth = 0
         self.desired_depth = 0
         self.current_depth_rate = 0
         self.desired_depth_rate = 0
         self.desired_thrust_z = 0
-        self.dt = 0.001
+        self.dt = 1/controller_freq
+
+        self.current_detectable_depth_state = {}
+        self.depths = [] 
+        self.detectable_depths = []
 
     def update_dd(self, desired_depth): #desired depth, should be called when new command is given
         self.desired_depth = desired_depth
