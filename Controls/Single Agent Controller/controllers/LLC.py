@@ -61,8 +61,10 @@ class LLC:
         thrust_z = self.depth_ctrl.update_dt()
         return thrust_z
     
-    def check_orientation():
+    #def check_orientation():
         # Check if the vehicle is oriented correctly
+        if self.roll_ctrl.current_detectable_angle <= margin and self.pitch_ctrl.current_detectable_angle <= margin and self.yaw_ctrl.current_detectable_angle <= margin:
+            return True
         return False
     
     def update_thrust_x(self):
