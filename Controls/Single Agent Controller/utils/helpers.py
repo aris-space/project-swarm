@@ -5,6 +5,7 @@ import time
 import os
 import matplotlib.pyplot as plt
 from config.constants import *
+import numpy as np
 
 
 def load_config(file_path):
@@ -35,15 +36,17 @@ def initialize_time_steps(planner_freq, loc_freq, imu_freq, llc_freq):
     return t_planner, t_loc, t_imu, t_llc
 
 def log_state(log_file, current_state, thrust_z, llc):
-    log_file.write(f"Current Depth: {current_state['depth']}, Current Depth Rate: {current_state['depth_rate']}, "
+    log_file.write(f"Current Depth: {current_state['z']}, Current Depth Rate: {current_state['dz']}, "
                    f"Thrust in z direction: {thrust_z}, desired depth: {llc.depth_ctrl.desired_depth}, "
                    f"desired depth rate: {llc.depth_ctrl.desired_depth_rate}\n")
 
 def update_current_state(current_state, thrust_z, torque_y, t_llc):
-    current_state['depth'] += current_state['depth_rate'] * t_llc
-    current_state['depth_rate'] += thrust_z * t_llc
-    current_state['roll'] += current_state['roll_rate'] * t_llc
-    current_state['roll_rate'] += torque_y * t_llc
+    current_state['z'] += current_state['dz'] * t_llc
+    current_state['dz'] += thrust_z * t_llc
+    current_state['roll'] += current_state['droll'] * t_llc
+    current_state['droll'] += torque_y * t_llc
+
+
 
 def plot_results(times, detectable_rolls, rolls, llc):
     plt.figure()
@@ -66,3 +69,17 @@ def plot_results(times, detectable_rolls, rolls, llc):
     plt.title('Depth over Time')
     plt.grid(True)
     plt.show()
+
+def append_state(array, x=0, y=0, z=0, roll=0, pitch=0, yaw=0, dx=0, dy=0, dz=0, droll=0, dpitch=0, dyaw=0):
+    # Create a dictionary with 6-DOF and derivatives
+    new_row = {
+        'x': x, 'y': y, 'z': z,
+        'roll': roll, 'pitch': pitch, 'yaw': yaw,
+        'dx': dx, 'dy': dy, 'dz': dz,
+        'droll': droll, 'dpitch': dpitch, 'dyaw': dyaw
+    }
+    
+    # Append the new row (dictionary) to the NumPy array
+    array = np.append(array, new_row)
+    
+    return array

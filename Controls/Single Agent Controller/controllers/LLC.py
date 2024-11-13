@@ -21,10 +21,14 @@ class LLC:
         self.pitch_ctrl = angle_ctrl(pid_params['pitch'], llc_freq)
         self.yaw_ctrl = angle_ctrl(pid_params['yaw'], llc_freq)
     
-    def fetch_IMU(self):
+    def update_IMU(self):
         pass
 
-    def fetch_loc(self):
+    def update_loc(self, state):
+        #update loc data
+        self.depth_ctrl.current_detectable_depth_state['depth'] = state['z']
+        self.depth_ctrl.update_cd(self.depth_ctrl.current_detectable_depth_state['depth'])
+        self.depth_ctrl.update_ddr()
         pass
 
     def update_angles(self, target_state, current_state):
@@ -50,3 +54,9 @@ class LLC:
     def check_orientation():
         pass
 
+    def update_target_state(self, target_state):
+        # Update target state for each PID
+        self.depth_ctrl.update_dd(target_state['z'])
+        self.roll_ctrl.update_dd(target_state['roll'])
+        self.pitch_ctrl.update_dd(target_state['pitch'])
+        self.yaw_ctrl.update_dd(target_state['yaw'])
