@@ -20,7 +20,7 @@ if __name__ == "__main__":
     llc_config = load_config(llc_config_path)
 
     # Initialize initial state
-    states = append_state(states, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    states = append_state(states, roll=5, pitch=5)
 
     # Initialize Time Steps
     runtime = num_planner_updates // planner_freq
@@ -32,40 +32,94 @@ if __name__ == "__main__":
     # Run the simulation
 
     with open(log_file_path, "w") as log_file:
-        for i in range(num_planner_updates):
+        for i in range(1):#range(num_planner_updates):
             
             #update target state
             llc.update_target_state(waypoints[i])
 
-            for j in range(int(loc_freq / planner_freq)):
+            for j in range(1):#range(int(loc_freq / planner_freq)):
 
                 #update loc data
                 llc.update_loc(states[-1])
 
-                for _ in range(imu_freq // loc_freq):
-                    llc.depth_ctrl.current_detectable_depth_state['depth_rate'] = states[-1]['dz']
-                    llc.depth_ctrl.update_cdr(llc.depth_ctrl.current_detectable_depth_state['depth_rate'])
+                for _ in range(50):#range(imu_freq // loc_freq):
 
-                    llc.roll_ctrl.current_detectable_angle_state['roll'] = states[-1]['roll']
-                    llc.roll_ctrl.update_cd(llc.roll_ctrl.current_detectable_angle_state['roll'])
-                    llc.roll_ctrl.update_ddr()
+                    #update imu data
+                    llc.update_IMU(states[-1])
 
-                    llc.roll_ctrl.current_detectable_angle_state['roll_rate'] = states[-1]['droll']
-                    llc.roll_ctrl.update_cdr(llc.roll_ctrl.current_detectable_angle_state['roll_rate'])
+                    for _ in range(50):#range(llc_freq // imu_freq):
 
-                    for _ in range(llc_freq // imu_freq):
-                        thrust_z = llc.depth_ctrl.update_dtz()
-                        torque_y = llc.roll_ctrl.update_dtau()
 
-                        log_state(log_file, states[-1], thrust_z, llc)
+                        #update the angles and rates by adding a new row and multiplying the torque from the step before with the time step
+                        new_state = states[-1].copy()
+                        states = np.append(states, new_state)
 
-                        llc.roll_ctrl.angles.append(states[-1]['roll'])
-                        llc.roll_ctrl.detectable_angles.append(llc.roll_ctrl.current_detectable_angle_state['roll'])
+                        states[-1]['droll'] = states[-2]['droll'] + states[-2]['torquey'] * t_llc
+                        states[-1]['roll'] = states[-2]['roll'] + (states[-2]['droll'] + states[-2]['torquey'] * t_llc) * t_llc
+                        states[-1]['dpitch'] = states[-2]['dpitch'] + states[-2]['torquex'] * t_llc
+                        states[-1]['pitch'] = states[-2]['pitch'] + (states[-2]['dpitch'] + states[-2]['torquex'] * t_llc) * t_llc
+                        states[-1]['dyaw'] = states[-2]['dyaw'] + states[-2]['torquez'] * t_llc
+                        states[-1]['yaw'] = states[-2]['yaw'] + (states[-2]['dyaw'] + states[-2]['torquez'] * t_llc) * t_llc
 
-                        llc.depth_ctrl.depths.append(states[-1]['z'])
-                        llc.depth_ctrl.detectable_depths.append(llc.depth_ctrl.current_detectable_depth_state['depth'])
+                        llc.update_desired_rates()
 
-                        update_current_state(states[-1], thrust_z, torque_y, t_llc)
+                        #update angles and z
+                        torquey,torquex,torquez = llc.update_torques()
+                        print("torquey: ", torquey)
+                        print("torquex: ", torquex)
+                        print("torquez: ", torquez)
+                        #llc.update_depth()
 
-    times = [i for i in range(len(llc.depth_ctrl.depths))]
-    plot_results(times, llc.roll_ctrl.detectable_angles, llc.roll_ctrl.angles, llc)
+
+
+
+                        #add torques to the current state
+                        states[-1]['torquey'] = torquey
+                        states[-1]['torquex'] = torquex
+                        states[-1]['torquez'] = torquez
+
+                        #store state[-1] in log file in new line
+                        log_file.write(f"{states[-1]}\n")
+                        
+
+                        #llc.update_angles_and_rates()
+
+    # Read the log file and extract roll values
+    timestamps = []
+    roll_values = []
+
+    #store all values of each state in the states in a csv file
+    with open('states.csv', 'w') as f:
+        for state in states:
+            f.write("%s\n" % state)
+
+
+    with open(log_file_path, "r") as log_file:
+        i = 0
+        for line in log_file:
+            state = eval(line.strip())
+            timestamps.append(i)
+            roll_values.append(state['roll'])
+            i+=1
+
+    # Plot roll values over time
+    plt.figure()
+    plt.plot(timestamps, roll_values, label='Roll')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Roll (degrees)')
+    plt.title('Roll over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    
+    #plot_results(times, llc)
+    #print(states)
+
+    """
+    #pseudocode
+
+    check if all angles are within threshold
+    if yes, compute desired dx and then thrust
+    if no, set thrust in x direction to 0 and continue
+
+    """

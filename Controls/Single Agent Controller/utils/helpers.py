@@ -46,14 +46,26 @@ def update_current_state(current_state, thrust_z, torque_y, t_llc):
     current_state['roll'] += current_state['droll'] * t_llc
     current_state['droll'] += torque_y * t_llc
 
+def update_state(states, t_llc): #to be replaced by RK4 => for now euler backwards
+    append_state(array=states,
+                #z= states[-1]['z'] + states[-1]['dz'] * t_llc,
+                #dz = states[-1]['dz'] + states[-1]['thrustz'] * t_llc,
+                droll = states[-1]['droll'] + states[-1]['torquey'] * t_llc,
+                roll = states[-1]['roll'] + (states[-1]['droll'] + states[-1]['torquey'] * t_llc) * t_llc,
+                dpitch = states[-1]['dpitch'] + states[-1]['torquex'] * t_llc,
+                pitch = states[-1]['pitch'] + (states[-1]['dpitch'] + states[-1]['torquex'] * t_llc) * t_llc,
+                dyaw = states[-1]['dyaw'] + states[-1]['torquez'] * t_llc,
+                yaw = states[-1]['yaw'] + (states[-1]['dyaw'] + states[-1]['torquez'] * t_llc) * t_llc,
+                )
+    
 
 
-def plot_results(times, detectable_rolls, rolls, llc):
+def plot_results(times, llc):
     plt.figure()
-    plt.plot(times, detectable_rolls, label='Detectable Roll')
+    plt.plot(times, llc.roll_ctrl.detectable_angles, label='Detectable Roll')
     plt.legend()
     plt.figure()
-    plt.plot(times, rolls, label='Roll')
+    plt.plot(times, llc.roll_ctrl.angles, label='Roll')
     plt.xlabel('Time (ms)')
     plt.ylabel('Roll (degrees)')
     plt.title('Roll over Time')
@@ -70,14 +82,18 @@ def plot_results(times, detectable_rolls, rolls, llc):
     plt.grid(True)
     plt.show()
 
-def append_state(array, x=0, y=0, z=0, roll=0, pitch=0, yaw=0, dx=0, dy=0, dz=0, droll=0, dpitch=0, dyaw=0):
+def append_state(array, x=0, y=0, z=0, roll=0, pitch=0, yaw=0, dx=0, dy=0, dz=0, droll=0, dpitch=0, dyaw=0, thrustx=0, thrusty=0, thrustz=0, torquex=0, torquey=0, torquez=0):
     # Create a dictionary with 6-DOF and derivatives
     new_row = {
         'x': x, 'y': y, 'z': z,
         'roll': roll, 'pitch': pitch, 'yaw': yaw,
         'dx': dx, 'dy': dy, 'dz': dz,
-        'droll': droll, 'dpitch': dpitch, 'dyaw': dyaw
+        'droll': droll, 'dpitch': dpitch, 'dyaw': dyaw,
+        'thrustx': thrustx, 'thrusty': thrusty, 'thrustz': thrustz,
+        'torquex': torquex, 'torquey': torquey, 'torquez': torquez
     }
+
+    #print(new_row)
     
     # Append the new row (dictionary) to the NumPy array
     array = np.append(array, new_row)
