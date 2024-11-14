@@ -1,4 +1,6 @@
-from .PID import PID
+from controllers.pid import PID
+from controllers.depth_ctrl import depth_ctrl
+from controllers.angle_ctrl import angle_ctrl
 import os
 import yaml
 
@@ -12,56 +14,75 @@ with open(yaml_path, "r") as file:
 #depth_controller_params = pid_params["pid_params"]["depth_controller"]
 
 class LLC:
-    def __init__(self, pid_params):
+    def __init__(self, pid_params, llc_freq):
         # Initialize six PIDs for each degree of freedom
-
-        self.depth_ctrl = depth_ctrl(pid_params)
+        self.depth_ctrl = depth_ctrl(pid_params['depth'], llc_freq)
+        self.roll_ctrl = angle_ctrl(pid_params['roll'], llc_freq)
+        self.pitch_ctrl = angle_ctrl(pid_params['pitch'], llc_freq)
+        self.yaw_ctrl = angle_ctrl(pid_params['yaw'], llc_freq)
     
-    def update_all(self, target_state, current_state):
+    def update_IMU(self, state):
+
+        self.roll_ctrl.update_cda(state['roll'])
+        self.roll_ctrl.update_dar()
+
+        self.roll_ctrl.update_cdar(state['droll'])
+
+
+        self.pitch_ctrl.update_cda(state['pitch'])
+        self.pitch_ctrl.update_dar()
+
+        self.pitch_ctrl.update_cdar(state['dpitch'])
+
+
+        self.yaw_ctrl.update_cda(state['yaw'])
+        self.yaw_ctrl.update_dar()
+
+        self.yaw_ctrl.update_cdar(state['dyaw'])
+
+        self.depth_ctrl.update_cdd(state['z'])
+        self.depth_ctrl.update_ddr()
+
+        self.depth_ctrl.update_cddr(state['dz'])
+
+    def update_loc(self, state):
+        #update loc data
+        pass
+
+    def update_torques(self):
         # Update each PID based on current state and target state
-        thrust_z = self.depth_ctrl.update_all(target_state, current_state)        
-        return thrust_z
-
-class depth_ctrl:
-    def __init__(self, pid_params):
-        self.depth_controller = PID(**pid_params['depth_controller'])
-        self.depth_rate_controller = PID(**pid_params['depth_controller'])
-        self.current_depth = 0
-        self.desired_depth = 0
-        self.current_depth_rate = 0
-        self.desired_depth_rate = 0
-        self.desired_thrust_z = 0
-        self.dt = 0.001
-
-    def update_dd(self, target_state): #desired depth, should be called when new command is given
-        self.desired_depth = target_state['depth']
-        return self.desired_depth
-
-    def update_cd(self, current_state): #current depth, should be called if new depth data is available
-        self.current_depth = current_state['depth']
-        return self.current_depth
-
-    def update_ddr(self, target_state): #desired depth rate, should be called after new depth data is given
-        self.desired_depth_rate = self.depth_controller.update(self.desired_depth, self.current_depth, self.dt)
-        target_state['depth_rate'] = self.desired_depth_rate
-        return self.desired_depth_rate
-   
-    def update_cdr(self, current_state): #current depth rate, should be called if new depth rate data is available
-        self.current_depth_rate = current_state['depth_rate']
-        return self.current_depth_rate
+        torque_y = self.roll_ctrl.update_dtau()
+        torque_x = self.pitch_ctrl.update_dtau()
+        torque_z = self.yaw_ctrl.update_dtau()
+        return torque_y, torque_x, torque_z
     
-    def update_dtz(self): #desired thrust z, should be called after desired depth rate is calculated
-        self.desired_thrust_z = self.depth_rate_controller.update(self.desired_depth_rate, self.current_depth_rate, self.dt)
-        return self.desired_thrust_z
-        
-    def update_all(self, target_state, current_state): #should not be used in the end
-        # Get current and target depths
-        self.update_cd(current_state)
-        self.update_dd(target_state)
-        # Update depth rate
-        self.update_ddr(target_state)
-        self.update_cdr(current_state)
-        # Update thrust_z
-        thrust_z = self.update_dtz()
-
+    def update_thrust_z(self):
+        # Update depth PID based on current state and target state
+        thrust_z = self.depth_ctrl.update_dt()
         return thrust_z
+    
+    #def check_orientation():
+        # Check if the vehicle is oriented correctly
+        if self.roll_ctrl.current_detectable_angle <= margin and self.pitch_ctrl.current_detectable_angle <= margin and self.yaw_ctrl.current_detectable_angle <= margin:
+            return True
+        return False
+    
+    def update_thrust_x(self):
+        pass
+
+    def update_target_state(self, target_state):
+        # Update target state for each PID
+        self.depth_ctrl.update_dd(target_state['z'])
+        self.roll_ctrl.update_da(target_state['roll'])
+        self.pitch_ctrl.update_da(target_state['pitch'])
+        self.yaw_ctrl.update_da(target_state['yaw'])
+
+    def update_desired_arates(self):
+        # Update desired angles and rates for each PID
+        self.roll_ctrl.update_dar()
+        self.pitch_ctrl.update_dar()
+        self.yaw_ctrl.update_dar()
+
+    def update_desired_drate(self):
+        # Update desired angles and rates for each PID
+        self.depth_ctrl.update_ddr()

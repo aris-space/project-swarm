@@ -1,40 +1,95 @@
-from controllers.LLC import LLC
-from controllers.PID import PID
+from controllers.llc import LLC
+from controllers.pid import PID
+from utils.helpers import *
+from config.constants import *
+from visualisation.waypoints import *
+from utils.states import *
 import yaml
 import time
 import os
+import matplotlib.pyplot as plt
+import numpy as np
 
-def load_config(file_path):
-    with open(file_path, 'r') as file:
-        return yaml.safe_load(file)
+
 
 if __name__ == "__main__":
-    # Construct absolute paths
+    
+    # Initialize paths & load config files
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    pid_params_path = os.path.join(base_dir, 'config', 'pid_params.yaml')
-    llc_config_path = os.path.join(base_dir, 'config', 'llc_config.yaml')
+    pid_params_path, llc_config_path, log_file_path = initialize_paths(base_dir)
 
-    # Load configurations
     pid_params = load_config(pid_params_path)
     llc_config = load_config(llc_config_path)
 
-    current_state = {'depth': 10, 'depth_rate': 0.0}
-    target_state = {'depth': 12, 'depth_rate': 0.0}
-    dt = 0.001  # Time step
+    # Initialize initial state
+    states = append_state(states, roll=5, pitch=5, z=10)
 
-    # Initialize 6-DOF Controller
-    llc = LLC(pid_params)
+    # Initialize Time Steps
+    runtime = num_planner_updates // planner_freq
+    t_planner, t_loc, t_imu, t_llc = initialize_time_steps(planner_freq, loc_freq, imu_freq, llc_freq)
 
-    with open("log.txt", "w") as log_file:
-        #Update the controller for 100 iterations
-        for _ in range(5000):  # Run for 100 iterations as an example
-            thrust_z = llc.update_all(target_state, current_state)
+    # Initialize LLC
+    llc = LLC(pid_params, llc_freq)
 
-            log_file.write(f"Current State: {current_state}, Thrust in z direction: {thrust_z}\n")
+    # Run the simulation
+
+    with open(log_file_path, "w") as log_file:
+        for i in range(1):#range(num_planner_updates):
             
-            # Simulate updating the current state (this should be replaced with actual sensor data)
-            current_state['depth'] += current_state['depth_rate'] * dt
-            current_state['depth_rate'] += thrust_z * dt
-            
-            # Wait for the next time step
-            time.sleep(dt)
+            #update target state
+            llc.update_target_state(waypoints[i])
+
+            for j in range(1):#range(int(loc_freq / planner_freq)):
+
+                #update loc data
+                #llc.update_loc(states[-1])
+                pass
+
+                for _ in range(50):#range(imu_freq // loc_freq):
+
+                    #update imu data
+                    llc.update_IMU(states[-1])
+
+                    for _ in range(50):#range(llc_freq // imu_freq):
+
+                        #update the angles and rates by adding a new row and multiplying the torque from the step before with the time step
+                        states = next_state(states, t_llc)
+
+                        #calculate desired rates
+                        llc.update_desired_arates()
+                        llc.update_desired_drate()
+
+                        #calculate torques
+                        torquey,torquex,torquez = llc.update_torques()
+                        #calculate thrust in z direction
+                        thrustz = llc.update_thrust_z()
+                        #depth = llc.update_depth()
+
+                        #add torques to the current state                  
+                        states[-1]['torquey'] = torquey
+                        states[-1]['torquex'] = torquex
+                        states[-1]['torquez'] = torquez
+
+                        #add thrustz to the current state
+                        states[-1]['thrustz'] = thrustz
+
+
+                        #store state[-1] in log file in new line
+                        log_file.write(f"{states[-1]}\n")
+                        
+
+                        #llc.update_angles_and_rates()
+
+    
+    plot_results(states, log_file_path)
+
+    """
+    #pseudocode
+
+    check if all angles are within threshold
+    if yes, compute desired dx and then thrust
+    if no, set thrust in x direction to 0 and continue
+
+    """
+
+    

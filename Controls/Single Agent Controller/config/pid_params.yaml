@@ -1,27 +1,39 @@
-depth_controller:
-  kp: 1
-  ki: 0.0
-  kd: 0.0
-depth_rate_controller:
-  kp: 1
-  ki: 0.0
-  kd: 0.0
+depth:
+  abs:
+    kp: 0.8
+    ki: 0.0
+    kd: 0.0
+  rate:
+    kp: 1.2
+    ki: 0.0
+    kd: 0.0
 
-pitch_controller:
-  kp: 5
-  ki: 0.0
-  kd: 0.0
-pitch_rate_controller:
-  kp: 5
-  ki: 0.0
-  kd: 0.0
+pitch:
+  abs:
+    kp: 5
+    ki: 0.0
+    kd: 0.0
+  rate:
+    kp: 5
+    ki: 0.0
+    kd: 0.0
 
-roll_controller:
-  kp: 5
-  ki: 0.0
-  kd: 0.0
-roll_rate_controller:
-  kp: 5
-  ki: 0.0
-  kd: 0.0
+roll:
+  abs:
+    kp: 0.8
+    ki: 0.0
+    kd: 0.0
+  rate:
+    kp: 1.2
+    ki: 0.0
+    kd: 0.0
 
+yaw:
+  abs:
+    kp: 0.8
+    ki: 0.0
+    kd: 0.0
+  rate:
+    kp: 1.2
+    ki: 0.0
+    kd: 0.0
