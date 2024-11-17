@@ -14,6 +14,12 @@ def state_equations(t, x, vehicle_model):
     x[3] = p (angular velocity around x) (roll rate)
     x[4] = q (angular velocity around y) (pitch rate)
     x[5] = r (angular velocity around z) (yaw rate)
+    x[6] = Thrust in x
+    x[7] = Thrust in y
+    x[8] = Thrust in z
+    x[9] = Torque in x
+    x[10] = Torque in y
+    x[11] = Torque in z
     
     Returns dx"""
 
@@ -37,7 +43,7 @@ def state_equations(t, x, vehicle_model):
 
     #External Forces
     Fx_b_kgmps = 1
-    Fy_b_kgmps = 0
+    Fy_b_kgmps = 1
     Fz_b_kgmps = 0
 
     #External Moments
