@@ -18,7 +18,7 @@ with open(yaml_path, "r") as file:
 
 class LLC:
 
-    def __init__(self, pid_params, llc_freq, roll, pitch, yaw):
+    def __init__(self, pid_params, init_params, llc_freq):
         # Initialize six PIDs for each degree of freedom
         #self.depth_ctrl = depth_ctrl(pid_params['depth'], llc_freq)
 
@@ -26,7 +26,7 @@ class LLC:
         self.pitch_ctrl = angle_ctrl(pid_params['pitch'], llc_freq)
         self.yaw_ctrl = angle_ctrl(pid_params['yaw'], llc_freq)
         
-        self.orientation_estimate_quat = self.euler_to_quaternion(self, roll, pitch, yaw)  # Initial orientation quaternion
+        self.orientation_estimate_quat = self.euler_to_quaternion(init_params['roll_init'], init_params['pitch_init'], init_params['yaw_init'])  # Initial orientation quaternion
 
     def euler_to_quaternion(self, roll, pitch, yaw):
         """
