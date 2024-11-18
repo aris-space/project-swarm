@@ -1,4 +1,4 @@
-from controllers.pid import PID
+from controllers.pid_v1 import PID
 class angle_ctrl:
     def __init__(self, pid_params, controller_freq):
         self.angle_controller = PID(**pid_params['abs'])
