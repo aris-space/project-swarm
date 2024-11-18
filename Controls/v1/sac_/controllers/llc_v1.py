@@ -7,15 +7,6 @@ from sac_.config.constants import *
 from scipy.spatial.transform import Rotation as R
 import numpy as np
 
-# Construct the relative path to the YAML file
-yaml_path = os.path.join(os.path.dirname(__file__), "../config/pid_params.yaml")
-
-with open(yaml_path, "r") as file:
-    pid_params = yaml.safe_load(file)
-
-# Access specific controller parameters
-#depth_controller_params = pid_params["pid_params"]["depth_controller"]
-
 class LLC:
 
     def __init__(self, pid_params, init_params, llc_freq):
@@ -27,8 +18,10 @@ class LLC:
         self.yaw_ctrl = angle_ctrl(pid_params['yaw'], llc_freq)
         
         self.orientation_estimate_quat = self.euler_to_quaternion(init_params['roll_init'], init_params['pitch_init'], init_params['yaw_init'])  # Initial orientation quaternion
+        self.position_estimate_vect = np.zeros(3)  # Initial position vector
 
-    def euler_to_quaternion(self, roll, pitch, yaw):
+
+    def euler_to_quaternion(self, roll: float, pitch: float, yaw: float):
         """
         Converts Euler angles to a quaternion.
 
@@ -40,11 +33,25 @@ class LLC:
         Returns:
             np.ndarray: Quaternion (x, y, z, w).
         """
-        # Compute the quaternion
+
         q = R.from_euler('xyz', [roll, pitch, yaw], degrees=False).as_quat()
         return q
 
-    def update_orientation(global_quat, roll_rate, pitch_rate, yaw_rate):
+    def quaternion_to_euler(self, quat: np.ndarray):
+        """
+        Converts a quaternion to Euler angles.
+
+        Args:
+            quat (np.ndarray): Quaternion (x, y, z, w).
+
+        Returns:
+            float, float, float: Euler angles roll, pitch, yaw (rad).
+        """
+
+        euler = R.from_quat(quat).as_euler('xyz', degrees=False)
+        return euler
+
+    def update_orientation(global_quat: np.ndarray, roll_rate: float, pitch_rate: float, yaw_rate: float):
         """
         Updates the global orientation quaternion based on local angular rates.
 
@@ -83,6 +90,19 @@ class LLC:
         
         return new_global_quat, roll, pitch, yaw
     
+    def update_position(self, state: np.ndarray):
+        """
+        Estimates the vehicle's position based on the current state.
+
+        Args:
+            state (np.ndarray): Current state vector [x, y, z, roll, pitch, yaw, dx, dy, dz, droll, dpitch, dyaw].
+
+        Returns:
+            np.ndarray: Estimated position vector [x, y, z].
+        """
+
+        self.position_estimate_vect = state[0:3]
+    
     def update_IMU_np_vec(self, state: np.ndarray):
         roll_rate = state[9]
         pitch_rate = state[10]
@@ -115,7 +135,9 @@ class LLC:
         self.depth_ctrl.update_cddr(z_rate)
         """
 
-    def update_IMU_dict(self, state):
+    def update_IMU_dict(self, state): #unused
+
+
 
         self.roll_ctrl.update_cda(state['roll'])
         self.roll_ctrl.update_dar()
@@ -139,7 +161,7 @@ class LLC:
 
         self.depth_ctrl.update_cddr(state['dz'])
 
-    def update_loc(self, state):
+    def update_loc(self, state): #unused
         #update loc data
         pass
 
@@ -156,14 +178,22 @@ class LLC:
         return thrust_z
     
     def check_orientation(self):
-        # Check if the vehicle is oriented correctly
-        if (self.roll_ctrl.current_detectable_angle - self.roll_ctrl.desired_angle <= deg_margin and self.pitch_ctrl.current_detectable_angle - self.pitch_ctrl.desired_angle <= deg_margin and self.yaw_ctrl.current_detectable_angle - self.yaw_ctrl.desired_angle <= deg_margin):
-            print(deg_margin)
+        # Check if the vehicle is oriented correctly by using orientation estimate quaternion
+
+        # Step 1: Convert the orientation estimate quaternion to Euler angles
+        roll, pitch, yaw = self.quaternion_to_euler(self.orientation_estimate_quat)
+
+        # Step 2: Check if the vehicle is within the desired orientation margins
+        roll_margin = np.abs(roll - self.roll_ctrl.desired_angle) < deg_margin
+        pitch_margin = np.abs(pitch - self.pitch_ctrl.desired_angle) < deg_margin
+        yaw_margin = np.abs(yaw - self.yaw_ctrl.desired_angle) < deg_margin
+
+        if roll_margin and pitch_margin and yaw_margin:
             return True
-        return False
+        else:
+            return False
 
-
-    def update_target_state(self, target_state):
+    def update_target_state(self, target_state: dict):
         # Update target state for each PID
         if target_state[2] is not None:
             self.depth_ctrl.update_dd(target_state['z'])
@@ -172,8 +202,7 @@ class LLC:
         if target_state['pitch'] is not None:
             self.pitch_ctrl.update_da(target_state['pitch'])
         if target_state['yaw'] is not None:
-            self.yaw_ctrl.update_da(target_state['yaw'])
-        
+            self.yaw_ctrl.update_da(target_state['yaw'])  
 
     def update_desired_arates(self):
         # Update desired angles and rates for each PID
