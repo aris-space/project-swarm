@@ -5,8 +5,9 @@ from sac_.utils.helpers import *
 
 planner_freq = 0.1
 loc_freq = 5
-imu_freq = 200
-llc_freq = 400
+imu_freq = 250
+llc_freq = 500
+sim_freq = 1000
     
 num_planner_updates = 1
 

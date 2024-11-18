@@ -28,9 +28,9 @@ if __name__ == "__main__":
 
             for _ in range(imu_freq // loc_freq): #imu updates
 
-                #update imu data
+
                 #give actual rates from sim to controller
-                llc.update_from_IMU_np_arr(actual_rates):
+                llc.update_from_IMU_np_arr(actual_rates)
 
                 for _ in range(llc_freq // imu_freq): #controller updates
 
