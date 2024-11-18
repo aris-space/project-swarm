@@ -1,5 +1,5 @@
-from controllers.llc import LLC
-from controllers.pid import PID
+from controllers.llc_v1 import LLC
+from controllers.pid_v1 import PID
 from utils.helpers import *
 from config.constants import *
 from visualisation.waypoints import *
