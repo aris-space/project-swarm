@@ -19,6 +19,10 @@ class angle_ctrl:
 
     def update_da(self, desired_angle): #desired angle, should be called when new command is given
         self.desired_angle = desired_angle
+        self.angle_controller.integral = 0
+        self.angle_rate_controller.integral = 0
+        self.angle_controller.last_error = 0
+        self.angle_rate_controller.last_error = 0
         return self.desired_angle
 
     def update_cda(self, imu_angle): #current angle, should be called if new angle data is available

@@ -1,4 +1,4 @@
-from controllers.pid import PID
+from controllers.pid_v1 import PID
 class fwd_ctrl:
     def __init__(self, pid_params, controller_freq):
         self.fwd_controller = PID(**pid_params['abs'])
@@ -19,6 +19,10 @@ class fwd_ctrl:
 
     def update_dd(self, desired_fwd): #desired fwd, should be called when new command is given
         self.desired_fwd = desired_fwd
+        self.fwd_controller.integral = 0
+        self.fwd_rate_controller.integral = 0
+        self.fwd_controller.last_error = 0
+        self.fwd_rate_controller.last_error = 0
         return self.desired_fwd
 
     def update_cdd(self, imu_fwd): #current fwd, should be called if new fwd data is available
