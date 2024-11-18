@@ -32,22 +32,25 @@ def initialize_states():
 
 def initialize_time_state_matrix():
     config = load_config("sim_config.yaml")
-    t0_ms = 0
-    tf_ms = config["runtime"]
-    h_ms = 1/config["frequency"] * 1000
+    t0_s = 0
+    tf_s = config["runtime"]
+    h_s = 1/config["frequency"]
     states = initialize_states()
 
     #time array
-    t_ms = np.arange(t0_ms, tf_ms, h_ms)
+    t_s = np.arange(t0_s, tf_s, h_s)
 
     #position matrix
-    x = np.zeros([np.size(states), np.size(t_ms)])
+    x = np.zeros([np.size(states), np.size(t_s)])
     x[:, 0] = states
     
-    return t_ms, x
+    return t_s, x
 
 def initialize():
     vehicle_model = initialize_vehicle()
-    t_ms, x = initialize_time_state_matrix()
+    t_s, x = initialize_time_state_matrix()
 
-    return vehicle_model, t_ms, x
+    config = load_config("sim_config.yaml")
+    h_s = 1/config["frequency"]
+
+    return vehicle_model, t_s, h_s, x

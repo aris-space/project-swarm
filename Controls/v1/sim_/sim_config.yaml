@@ -29,6 +29,6 @@ inital_states:
 
 # Simulation
 
-frequency: 1000                      # Hz
-runtime: 10000                      # ms
+frequency: 100                        # Hz
+runtime: 10                           # s
   
