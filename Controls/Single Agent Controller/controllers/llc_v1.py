@@ -74,10 +74,14 @@ class LLC:
 
     def update_target_state(self, target_state):
         # Update target state for each PID
-        self.depth_ctrl.update_dd(target_state['z'])
-        self.roll_ctrl.update_da(target_state['roll'])
-        self.pitch_ctrl.update_da(target_state['pitch'])
-        self.yaw_ctrl.update_da(target_state['yaw'])
+        if target_state['z'] is not None:
+            self.depth_ctrl.update_dd(target_state['z'])
+        if target_state['roll'] is not None:
+            self.roll_ctrl.update_da(target_state['roll'])
+        if target_state['pitch'] is not None:
+            self.pitch_ctrl.update_da(target_state['pitch'])
+        if target_state['yaw'] is not None:
+            self.yaw_ctrl.update_da(target_state['yaw'])
 
     def update_desired_arates(self):
         # Update desired angles and rates for each PID

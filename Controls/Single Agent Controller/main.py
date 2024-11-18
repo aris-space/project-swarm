@@ -1,14 +1,12 @@
 from controllers.llc_v1 import LLC
-from controllers.pid_v1 import PID
 from utils.helpers import *
 from config.constants import *
 from visualisation.waypoints import *
 from utils.states import *
-import yaml
-import time
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+#import six_dof_model as sdm
 
 
 
@@ -62,8 +60,15 @@ if __name__ == "__main__":
                         #calculate torques
                         torquey,torquex,torquez = llc.update_torques()
                         #calculate thrust in z direction
+
+                        
+
+                        """
                         thrustz = llc.update_thrust_z()
                         #depth = llc.update_depth()
+                        """
+
+
                         """
                         #check if the orientation is correct and if yes, compute desired dx and then thrust
                         if llc.check_orientation():
@@ -80,7 +85,7 @@ if __name__ == "__main__":
                         states[-1]['torquez'] = torquez
 
                         #add thrustz to the current state
-                        states[-1]['thrustz'] = thrustz
+                        #states[-1]['thrustz'] = thrustz
 
 
                         #store state[-1] in log file in new line
