@@ -1,8 +1,8 @@
-from controllers.llc_v1 import LLC
-from utils.helpers import *
-from config.constants import *
-from visualisation.waypoints import *
-from utils.states import *
+from sac_.controllers.llc_v1 import LLC
+from sac_.utils.helpers import *
+from sac_.config.constants import *
+from sac_.visualisation.waypoints import *
+from sac_.utils.states import *
 import os
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +10,7 @@ import numpy as np
 
 
 
-if __name__ == "__main__":
+if __name__ == "unused_main":
     
     # Initialize paths & load config files
     base_dir = os.path.dirname(os.path.abspath(__file__))
