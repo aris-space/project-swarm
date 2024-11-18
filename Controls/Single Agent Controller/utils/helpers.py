@@ -1,5 +1,5 @@
-from controllers.llc import LLC
-from controllers.pid import PID
+from controllers.llc_v1 import LLC
+from controllers.pid_v1 import PID
 import yaml
 import time
 import os
