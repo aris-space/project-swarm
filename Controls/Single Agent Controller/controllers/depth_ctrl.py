@@ -19,6 +19,10 @@ class depth_ctrl:
 
     def update_dd(self, desired_depth): #desired depth, should be called when new command is given
         self.desired_depth = desired_depth
+        self.depth_controller.integral = 0
+        self.depth_rate_controller.integral = 0
+        self.depth_controller.last_error = 0
+        self.depth_rate_controller.last_error = 0
         return self.desired_depth
 
     def update_cdd(self, imu_depth): #current depth, should be called if new depth data is available
