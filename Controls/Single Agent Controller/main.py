@@ -64,6 +64,15 @@ if __name__ == "__main__":
                         #calculate thrust in z direction
                         thrustz = llc.update_thrust_z()
                         #depth = llc.update_depth()
+                        """
+                        #check if the orientation is correct and if yes, compute desired dx and then thrust
+                        if llc.check_orientation():
+                            pass
+                        else:
+                        """
+
+                        
+
 
                         #add torques to the current state                  
                         states[-1]['torquey'] = torquey

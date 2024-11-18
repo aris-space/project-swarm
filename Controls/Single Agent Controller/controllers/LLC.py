@@ -3,6 +3,7 @@ from controllers.depth_ctrl import depth_ctrl
 from controllers.angle_ctrl import angle_ctrl
 import os
 import yaml
+from config.constants import *
 
 # Construct the relative path to the YAML file
 yaml_path = os.path.join(os.path.dirname(__file__), "../config/pid_params.yaml")
@@ -61,9 +62,10 @@ class LLC:
         thrust_z = self.depth_ctrl.update_dt()
         return thrust_z
     
-    #def check_orientation():
+    def check_orientation(self):
         # Check if the vehicle is oriented correctly
-        if self.roll_ctrl.current_detectable_angle <= margin and self.pitch_ctrl.current_detectable_angle <= margin and self.yaw_ctrl.current_detectable_angle <= margin:
+        if (self.roll_ctrl.current_detectable_angle - self.roll_ctrl.desired_angle <= deg_margin and self.pitch_ctrl.current_detectable_angle - self.pitch_ctrl.desired_angle <= deg_margin and self.yaw_ctrl.current_detectable_angle - self.yaw_ctrl.desired_angle <= deg_margin):
+            print(deg_margin)
             return True
         return False
     

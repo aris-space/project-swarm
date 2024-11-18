@@ -5,3 +5,5 @@ imu_freq = 200
 llc_freq = 400
     
 num_planner_updates = 1
+
+deg_margin = 1
