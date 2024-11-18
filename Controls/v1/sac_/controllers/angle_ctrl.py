@@ -44,10 +44,6 @@ class angle_ctrl:
         print("desired torque: ", self.desired_torque)
         return self.desired_torque
 
-    #def update_angle_and_rate(angle, rate):
-        self.current_angle = angle
-        self.current_angle_rate = rate
-
     def append_to_state(self, state):
         state['detectable angle'] = self.current_detectable_angle
         state['detectable rate'] = self.current_detectable_angle_rate

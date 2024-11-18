@@ -4,6 +4,8 @@ from controllers.angle_ctrl import angle_ctrl
 import os
 import yaml
 from config.constants import *
+from scipy.spatial.transform import Rotation as R
+import numpy as np
 
 # Construct the relative path to the YAML file
 yaml_path = os.path.join(os.path.dirname(__file__), "../config/pid_params.yaml")
@@ -15,13 +17,88 @@ with open(yaml_path, "r") as file:
 #depth_controller_params = pid_params["pid_params"]["depth_controller"]
 
 class LLC:
+
     def __init__(self, pid_params, llc_freq):
         # Initialize six PIDs for each degree of freedom
         self.depth_ctrl = depth_ctrl(pid_params['depth'], llc_freq)
         self.roll_ctrl = angle_ctrl(pid_params['roll'], llc_freq)
         self.pitch_ctrl = angle_ctrl(pid_params['pitch'], llc_freq)
         self.yaw_ctrl = angle_ctrl(pid_params['yaw'], llc_freq)
+        
+        self.orientation_estimate_quat = np.array([0, 0, 0, 1])  # Initial orientation quaternion
+
+    def update_orientation(global_quat, roll_rate, pitch_rate, yaw_rate):
+        """
+        Updates the global orientation quaternion based on local angular rates.
+
+        Args:
+            global_quat (np.ndarray): The current global orientation quaternion (x, y, z, w).
+            roll_rate (float): Angular velocity around the x-axis (rad/s).
+            pitch_rate (float): Angular velocity around the y-axis (rad/s).
+            yaw_rate (float): Angular velocity around the z-axis (rad/s).
+            dt (float): Time step for integration (s).
+
+        Returns:
+            np.ndarray: Updated global orientation quaternion (x, y, z, w).
+            float, float, float: Updated global Euler angles roll, pitch, yaw (rad).
+        """
+        # Step 1: Compute the magnitude of angular velocity (|ω| = sqrt(roll_rate^2 + pitch_rate^2 + yaw_rate^2))
+        omega_mag = np.sqrt(roll_rate**2 + pitch_rate**2 + yaw_rate**2)
+        
+        # Step 2: If angular velocity is very small, treat it as no rotation
+        if omega_mag < 1e-8:
+            roll, pitch, yaw = R.from_quat(global_quat).as_euler('xyz', degrees=False)
+            return global_quat, roll, pitch, yaw
+        
+        # Step 3: Compute the incremental rotation quaternion (local frame)
+        theta = omega_mag * 1/imu_freq  # Angle of rotation
+        axis = np.array([roll_rate, pitch_rate, yaw_rate]) / omega_mag  # Rotation axis
+        delta_quat = R.from_rotvec(axis * theta).as_quat()  # Incremental quaternion
+        
+        # Step 4: Update the global quaternion by applying the incremental rotation
+        global_rotation = R.from_quat(global_quat)  # Convert global_quat to a Rotation object
+        incremental_rotation = R.from_quat(delta_quat)  # Incremental rotation quaternion
+        new_global_rotation = global_rotation * incremental_rotation  # Combine rotations
+        
+        # Step 5: Convert back to quaternion and Euler angles
+        new_global_quat = new_global_rotation.as_quat()  # Updated quaternion (x, y, z, w)
+        roll, pitch, yaw = new_global_rotation.as_euler('xyz', degrees=False)  # Roll, pitch, yaw
+        
+        return new_global_quat, roll, pitch, yaw
+
     
+    def update_IMU_torch_vec(self, state):
+        roll_rate = state[9]
+        pitch_rate = state[10]
+        yaw_rate = state[11]
+        
+        self.orientation_estimate_quat, roll, pitch, yaw = self.update_orientation(self.orientation_estimate_quat, roll_rate, pitch_rate, yaw_rate)
+
+        self.roll_ctrl.update_cda(roll)
+        self.roll_ctrl.update_dar()
+
+        self.roll_ctrl.update_cdar(roll_rate)
+
+
+        self.pitch_ctrl.update_cda(pitch)
+        self.pitch_ctrl.update_dar()
+
+        self.pitch_ctrl.update_cdar(pitch_rate)
+
+
+        self.yaw_ctrl.update_cda(yaw)
+        self.yaw_ctrl.update_dar()
+
+        self.yaw_ctrl.update_cdar(yaw_rate)
+
+
+        """
+        self.depth_ctrl.update_cdd(z)
+        self.depth_ctrl.update_ddr()
+
+        self.depth_ctrl.update_cddr(z_rate)
+        """
+
     def update_IMU(self, state):
 
         self.roll_ctrl.update_cda(state['roll'])
@@ -74,7 +151,7 @@ class LLC:
 
     def update_target_state(self, target_state):
         # Update target state for each PID
-        if target_state['z'] is not None:
+        if target_state[2] is not None:
             self.depth_ctrl.update_dd(target_state['z'])
         if target_state['roll'] is not None:
             self.roll_ctrl.update_da(target_state['roll'])

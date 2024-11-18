@@ -1,4 +1,8 @@
 # Frequencies
+
+# should not be used anymore if new main exists
+
+
 planner_freq = 0.1
 loc_freq = 5
 imu_freq = 200
