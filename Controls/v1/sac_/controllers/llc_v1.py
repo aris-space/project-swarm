@@ -18,14 +18,31 @@ with open(yaml_path, "r") as file:
 
 class LLC:
 
-    def __init__(self, pid_params, llc_freq):
+    def __init__(self, pid_params, llc_freq, roll, pitch, yaw):
         # Initialize six PIDs for each degree of freedom
-        self.depth_ctrl = depth_ctrl(pid_params['depth'], llc_freq)
+        #self.depth_ctrl = depth_ctrl(pid_params['depth'], llc_freq)
+
         self.roll_ctrl = angle_ctrl(pid_params['roll'], llc_freq)
         self.pitch_ctrl = angle_ctrl(pid_params['pitch'], llc_freq)
         self.yaw_ctrl = angle_ctrl(pid_params['yaw'], llc_freq)
         
-        self.orientation_estimate_quat = np.array([0, 0, 0, 1])  # Initial orientation quaternion
+        self.orientation_estimate_quat = self.euler_to_quaternion(self, roll, pitch, yaw)  # Initial orientation quaternion
+
+    def euler_to_quaternion(self, roll, pitch, yaw):
+        """
+        Converts Euler angles to a quaternion.
+
+        Args:
+            roll (float): Roll angle (rad).
+            pitch (float): Pitch angle (rad).
+            yaw (float): Yaw angle (rad).
+
+        Returns:
+            np.ndarray: Quaternion (x, y, z, w).
+        """
+        # Compute the quaternion
+        q = R.from_euler('xyz', [roll, pitch, yaw], degrees=False).as_quat()
+        return q
 
     def update_orientation(global_quat, roll_rate, pitch_rate, yaw_rate):
         """
@@ -65,9 +82,8 @@ class LLC:
         roll, pitch, yaw = new_global_rotation.as_euler('xyz', degrees=False)  # Roll, pitch, yaw
         
         return new_global_quat, roll, pitch, yaw
-
     
-    def update_IMU_torch_vec(self, state):
+    def update_IMU_np_vec(self, state: np.ndarray):
         roll_rate = state[9]
         pitch_rate = state[10]
         yaw_rate = state[11]
@@ -99,7 +115,7 @@ class LLC:
         self.depth_ctrl.update_cddr(z_rate)
         """
 
-    def update_IMU(self, state):
+    def update_IMU_dict(self, state):
 
         self.roll_ctrl.update_cda(state['roll'])
         self.roll_ctrl.update_dar()
@@ -145,9 +161,7 @@ class LLC:
             print(deg_margin)
             return True
         return False
-    
-    def update_thrust_x(self):
-        pass
+
 
     def update_target_state(self, target_state):
         # Update target state for each PID
@@ -159,6 +173,7 @@ class LLC:
             self.pitch_ctrl.update_da(target_state['pitch'])
         if target_state['yaw'] is not None:
             self.yaw_ctrl.update_da(target_state['yaw'])
+        
 
     def update_desired_arates(self):
         # Update desired angles and rates for each PID

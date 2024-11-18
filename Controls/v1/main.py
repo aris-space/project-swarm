@@ -10,12 +10,7 @@ import numpy as np
 
 if __name__ == "__main__":
 
-    # Initialize paths & load config files
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    pid_params_path, llc_config_path, log_file_path = initialize_paths(base_dir)
-
-    pid_params = load_config(pid_params_path)
-    llc_config = load_config(llc_config_path)
+    pid_params = load_yaml('main/Controls/v1/sac_/config/pid_params.yaml')
 
 
     llc = LLC(pid_params, llc_freq)
