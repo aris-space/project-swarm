@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-def state_equations(t, x, vehicle_model):
+def state_equations(t:np.array, x:np.array, vehicle_model):
     """t == time, x == Vector of current states, vehicle_model == dict of vehicle properties
     
     variables are named under following convention <name>_<frame>_<units>

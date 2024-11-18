@@ -51,7 +51,7 @@ if __name__ == "__main__":
                     for _ in range(50):#range(llc_freq // imu_freq):
 
                         #update the angles and rates by adding a new row and multiplying the torque from the step before with the time step
-                        states = next_state(states, t_llc)
+                        states = next_state(states, t_llc) #darf nicht länger als 0.001s dauern
 
                         #calculate desired rates
                         llc.update_desired_arates()
