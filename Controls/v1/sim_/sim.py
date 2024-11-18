@@ -5,6 +5,7 @@ from iterate import rk4
 from pos_ang_integrator import posang
 
 
+
 #initialization
 vehicle_model = {
     "weight": 5,
@@ -49,6 +50,7 @@ pos_ang0 = np.array([
     theta0_b_rad,
     psi0_b_rad
 ])
+print(pos_ang0)
 
 x0 = np.array([
     u0_b_mps,
