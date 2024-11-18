@@ -103,10 +103,10 @@ class LLC:
 
         self.position_estimate_vect = state[0:3]
     
-    def update_IMU_np_vec(self, state: np.ndarray):
-        roll_rate = state[9]
-        pitch_rate = state[10]
-        yaw_rate = state[11]
+    def update_from_IMU_np_arr(self, state: np.ndarray):
+        roll_rate = state[0]
+        pitch_rate = state[1]
+        yaw_rate = state[2]
         
         self.orientation_estimate_quat, roll, pitch, yaw = self.update_orientation(self.orientation_estimate_quat, roll_rate, pitch_rate, yaw_rate)
 
@@ -135,7 +135,7 @@ class LLC:
         self.depth_ctrl.update_cddr(z_rate)
         """
 
-    def update_IMU_dict(self, state): #unused
+    def update_from_IMU_dict(self, state): #unused
 
 
 
