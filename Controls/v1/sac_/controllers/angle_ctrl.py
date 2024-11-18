@@ -1,4 +1,4 @@
-from controllers.pid_v1 import PID
+from sac_.controllers.pid_v1 import PID
 class angle_ctrl:
     def __init__(self, pid_params, controller_freq):
         self.angle_controller = PID(**pid_params['abs'])
@@ -43,10 +43,6 @@ class angle_ctrl:
         self.current_detectable_torque = self.desired_torque
         print("desired torque: ", self.desired_torque)
         return self.desired_torque
-
-    #def update_angle_and_rate(angle, rate):
-        self.current_angle = angle
-        self.current_angle_rate = rate
 
     def append_to_state(self, state):
         state['detectable angle'] = self.current_detectable_angle

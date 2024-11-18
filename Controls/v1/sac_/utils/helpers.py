@@ -1,20 +1,20 @@
-from controllers.llc_v1 import LLC
-from controllers.pid_v1 import PID
+from sac_.controllers.llc_v1 import LLC
+from sac_.controllers.pid_v1 import PID
 import yaml
 import time
 import os
 import matplotlib.pyplot as plt
-from config.constants import *
+from sac_.config.constants import *
 import numpy as np
 
 
-def load_config(file_path):
+def load_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
 def initialize_paths(base_dir):
-    pid_params_path = os.path.join(base_dir, 'config', 'pid_params.yaml')
-    llc_config_path = os.path.join(base_dir, 'config', 'llc_config.yaml')
+    pid_params_path = os.path.join(base_dir, 'sac_', 'config', 'pid_params.yaml')
+    llc_config_path = os.path.join(base_dir, 'sac_', 'config', 'llc_config.yaml')
     log_file_path = os.path.join(base_dir, 'log.txt')
     return pid_params_path, llc_config_path, log_file_path
 
