@@ -121,7 +121,7 @@ def plot(t_s, x):
 
 
     plt.tight_layout()
-    plt.savefig("simplots/sim4.png")
+    #plt.savefig("simplots/sim4.png")
     plt.show()
 
     """
