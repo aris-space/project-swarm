@@ -12,6 +12,8 @@ from utils.constants2 import *
 
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
+import os
 
 """
 # needed for plotting
@@ -142,50 +144,68 @@ if __name__ == "__main__":
     llc2 = LLC2(CONSTANTS['pid_params'], CONSTANTS['init_params'])
 
     
-    euler_x = np.zeros(5000)
-    euler_y = np.zeros(5000)
-    euler_z = np.zeros(5000)
+    euler_measured_x = np.zeros(5000)
+    euler_measured_y = np.zeros(5000)
+    euler_measured_z = np.zeros(5000)
     euler_actual_x = np.zeros(5000)
     euler_actual_y = np.zeros(5000)
     euler_actual_z = np.zeros(5000)
+    
+    # Open a CSV file in the v1 folder
+    os.makedirs('v1', exist_ok=True)
+    with open('v1/actual_states_log.csv', mode='w') as file:
+        writer = csv.writer(file)
+        writer.writerow(['time_step', 'actual_roll', 'actual_pitch',  'actual_yaw',  'actual_depth',
+                         'measured_roll', 'measured_pitch', 'measured_yaw',  'measured_depth',])
 
-    for j in range(5):
-        llc2.global_orientation_target_quat = llc2.euler_zyx_to_quaternion(waypoints[j]['yaw'], waypoints[j]['pitch'], waypoints[j]['roll'])
-        for i in range(1000):
-            llc2.update_angle_pids()
-            tau_x, tau_y, tau_z = llc2.update_angle_rate_pids()
+        for j in range(5):
+            llc2.global_orientation_target_quat = llc2.euler_zyx_to_quaternion(waypoints[j]['yaw'], waypoints[j]['pitch'], waypoints[j]['roll'])
+            for i in range(1000):
+                llc2.update_angle_pids()
+                tau_x, tau_y, tau_z = llc2.update_angle_rate_pids()
 
-            #simulation
-            angle_state[0,:] = rk4(simple_system_dynamics, angle_state[0,:], prev_torques[0], tau_x, 1/LLC_FREQ)
-            angle_state[1,:] = rk4(simple_system_dynamics, angle_state[1,:], prev_torques[1], tau_y, 1/LLC_FREQ)
-            angle_state[2,:] = rk4(simple_system_dynamics, angle_state[2,:], prev_torques[2], tau_z, 1/LLC_FREQ)
+                # Simulation
+                angle_state[0,:] = rk4(simple_system_dynamics, angle_state[0,:], prev_torques[0], tau_x, 1/LLC_FREQ)
+                angle_state[1,:] = rk4(simple_system_dynamics, angle_state[1,:], prev_torques[1], tau_y, 1/LLC_FREQ)
+                angle_state[2,:] = rk4(simple_system_dynamics, angle_state[2,:], prev_torques[2], tau_z, 1/LLC_FREQ)
 
-            prev_torques = tau_x, tau_y, tau_z
+                prev_torques = tau_x, tau_y, tau_z
 
-            euler_actual_x[j*1000+i] = angle_state[0,0]
-            euler_actual_y[j*1000+i] = angle_state[1,0]
-            euler_actual_z[j*1000+i] = angle_state[2,0]
+                #euler_actual_x[j*1000+i] = angle_state[0,0]
+                #euler_actual_y[j*1000+i] = angle_state[1,0]
+                #euler_actual_z[j*1000+i] = angle_state[2,0]
 
-            print(angle_state)
+                llc2.update_actual_local_rates(angle_state[0,1], angle_state[1,1], angle_state[2,1])
+                llc2.update_global_orientation_w_dead_reckoning(angle_state[2,1], angle_state[1,1], angle_state[0,1], dt=1/LLC_FREQ)
+                #if i % 100 == 0:
+                #    llc2.update_global_orientation_w_state(angle_state[2,0], angle_state[1,0], angle_state[0,0], dt=1/LLC_FREQ)
+                
+                euler_measured_z[j*1000+i], euler_measured_y[j*1000+i], euler_measured_x[j*1000+i] = llc2.quaternion_to_euler_zyx(llc2.global_orientation_estimate_quat)
 
-            llc2.update_actual_local_rates(angle_state[0,1], angle_state[1,1], angle_state[2,1])
-            llc2.update_global_orientation_estimate_quat_hard(angle_state[2,1], angle_state[1,1], angle_state[0,1], dt=1/LLC_FREQ)
-            #if i%100 == 0:
-                #llc2.update_global_orientation_estimate_quat_easy(angle_state[2,0], angle_state[1,0], angle_state[0,0], dt=1/LLC_FREQ) 
-            print(llc2.quaternion_to_euler_zyx(llc2.global_orientation_estimate_quat))
+                # Log the state to the CSV file
+                writer.writerow([j*1000+i, angle_state[0,0], angle_state[1,0], angle_state[2,0], depth_state[0]]             
+                                    )
 
-            euler_z[j*1000+i], euler_y[j*1000+i], euler_x[j*1000+i] = llc2.quaternion_to_euler_zyx(llc2.global_orientation_estimate_quat)
 
-    #plot euler_x, euler_y, euler_z with time as a function of time(index i)
-    plt.plot(euler_x)
-    plt.plot(euler_y)
-    plt.plot(euler_z)
+    #extract states from states_log.csv
+    with open('actual_states_log.csv', mode='r') as file:
+        reader = csv.reader(file)
+        next(reader)
+        for row in reader:
+            euler_actual_x[int(row[0])] = float(row[1])
+            euler_actual_y[int(row[0])] = float(row[3])
+            euler_actual_z[int(row[0])] = float(row[5])
+    #plot actual euler angles
     plt.plot(euler_actual_x)
     plt.plot(euler_actual_y)
     plt.plot(euler_actual_z)
+
+
     #include legend
-    plt.legend(['perceived_euler_x', 'perceived_euler_y', 'per_ceived_euler_z', 'euler_actual_x', 'euler_actual_y', 'euler_actual_z'])
+    plt.legend(['perceived_euler_roll', 'perceived_euler_pitch', 'perceived_euler_yaw', 'actual_euler_roll', 'actual_euler_pitch', 'actual_euler_yaw'])
     plt.show()
+
+
 
     # Todo:
     # Integration dt to s and pass dt in 0.005 

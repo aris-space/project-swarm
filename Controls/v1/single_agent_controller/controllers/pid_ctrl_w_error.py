@@ -1,7 +1,7 @@
 import time
 
 class PID_w_error:
-    def __init__(self, kp:float, ki:float, kd:float, windup_max=None, saturation_max=None, weight_b=1, weight_c=1):
+    def __init__(self, kp:float, ki:float, kd:float, windup_max=None, saturation_max=None):
         self.kp = kp
         self.ki = ki
         self.kd = kd
@@ -21,7 +21,7 @@ class PID_w_error:
     def update(self, error, dt=None, skip=False):
 
         if dt ==None:
-            dt = (time.time() - self.previous_time) * 1000
+            dt = (time.time() - self.previous_time)
         self.previous_time = time.time()
 
         if skip == False:
