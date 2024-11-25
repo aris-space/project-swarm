@@ -48,6 +48,6 @@ def plot_orientation(fig=None, ax=None, x=0, y=0, z=0, roll=0, pitch=0, yaw=0):
     ax.quiver(start[0], start[1], start[2], o[0], o[1], o[2], color='r', length=1, normalize=False)
 
     plt.draw()
-    plt.pause(0.0001)
+    plt.pause(0.00002)
 
     return fig, ax

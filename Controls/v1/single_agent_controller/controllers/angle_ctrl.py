@@ -7,7 +7,8 @@ class angle_ctrl:
         #self.current_angle = 0
         self.desired_angle = 0
         #self.current_angle_rate = 0
-        self.desired_angle_rate = 0
+        self.desired_angle_rate_global = 0
+        self.desired_angle_rate_local = 0
         #self.current_torque = 0
         self.desired_torque = 0
 
@@ -27,21 +28,24 @@ class angle_ctrl:
 
     def update_cda(self, imu_angle): #current angle, should be called if new angle data is available
         self.current_detectable_angle = imu_angle
+        #print("current detectable angle: ", self.current_detectable_angle)
         return self.current_detectable_angle
 
     def update_dar(self): #desired angle rate, should be called after new angle data is given
-        self.desired_angle_rate = self.angle_controller.update(self.desired_angle, self.current_detectable_angle, self.dt)
-        print("desired angle rate: ", self.desired_angle_rate)
-        return self.desired_angle_rate
+        self.desired_angle_rate_global = self.angle_controller.update(self.desired_angle, self.current_detectable_angle, self.dt)
+        #print("desired angle rate: ", self.desired_angle_rate_global)
+        return self.desired_angle_rate_global
    
     def update_cdar(self, imu_angle_rate): #current angle rate, should be called if new angle rate data is available
         self.current_detectable_angle_rate = imu_angle_rate
+        #print("current detectable angle rate: ", self.current_detectable_angle_rate)
         return self.current_detectable_angle_rate
     
     def update_dtau(self): #desired torque, should be called after desired angle rate is calculated
-        self.desired_torque = self.angle_rate_controller.update(self.desired_angle_rate, self.current_detectable_angle_rate, self.dt)
+        self.desired_torque = self.angle_rate_controller.update(self.desired_angle_rate_local, self.current_detectable_angle_rate, self.dt)
         self.current_detectable_torque = self.desired_torque
-        print("desired torque: ", self.desired_torque)
+        #("desired torque: ", self.desired_torque)
+        #print("integrator: ", self.angle_rate_controller.integral)
         return self.desired_torque
 
     def append_to_state(self, state):

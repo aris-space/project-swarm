@@ -1,14 +1,9 @@
 import math
 import numpy as np
 
-<<<<<<< HEAD:Controls/v1/sim_/six_dof_model.py
 def state_equations(t_s: np.array, x: np.array, vehicle_model: dict):
     """Attributes:
     t_ms == time, x == Vector of current states, vehicle_model == dict of vehicle properties
-=======
-def state_equations(x:np.array, vehicle_model):
-    """t == time, x == Vector of current states, vehicle_model == dict of vehicle properties
->>>>>>> 7f39d69 (first working sim):Controls/v1/sim_/y/six_dof_model.py
     
     variables are named under following convention <name>_<frame>_<units>
 
@@ -53,7 +48,6 @@ def state_equations(x:np.array, vehicle_model):
     Jzz_b_kgm2 = vehicle_model["MoI Tensor"][2,2]
 
     #External Forces
-<<<<<<< HEAD:Controls/v1/sim_/six_dof_model.py
     Fx_b_kgmps = x[12]
     Fy_b_kgmps = x[13]
     Fz_b_kgmps = x[14]
@@ -72,54 +66,26 @@ def state_equations(x:np.array, vehicle_model):
     dx[3] = 0 #x[9]
     dx[4] = 0 #x[10]
     dx[5] = 0 #x[11]
-=======
-    Fx_b_kgmps = x[6]
-    Fy_b_kgmps = x[7]
-    Fz_b_kgmps = x[8]
-
-    #External Moments
-    L__b_kgm2ps2 = x[9]
-    M__b_kgm2ps2 = x[10]
-    N__b_kgm2ps2 = x[11]
-
-
->>>>>>> 7f39d69 (first working sim):Controls/v1/sim_/y/six_dof_model.py
 
     #Equations of motion
     #Translational equations
     # du_b_mps2
-<<<<<<< HEAD:Controls/v1/sim_/six_dof_model.py
     dx[6] = 1/m_kg*Fx_b_kgmps - w_b_mps*q_b_rps + v_b_mps*r_b_rps
     # dv_b_mps2
     dx[7] = 1/m_kg*Fy_b_kgmps - u_b_mps*r_b_rps + w_b_mps*p_b_rps
     # dw_b_mps2
     dx[8] = 1/m_kg*Fz_b_kgmps - v_b_mps*p_b_rps + u_b_mps*q_b_rps
-=======
-    dx[0] = 1/m_kg*Fx_b_kgmps #- w_b_mps*q_b_rps + v_b_mps*r_b_rps
-    # dv_b_mps2
-    dx[1] = 1/m_kg*Fy_b_kgmps #- u_b_mps*r_b_rps + w_b_mps*p_b_rps
-    # dw_b_mps2
-    dx[2] = 1/m_kg*Fz_b_kgmps #- v_b_mps*p_b_rps + u_b_mps*q_b_rps
->>>>>>> 7f39d69 (first working sim):Controls/v1/sim_/y/six_dof_model.py
 
     #Rotational equations | Moments: M=[L,M,N]T | w=[p,q,r]T angular speed (radiants/second)  
     #Jxx, Jyy, Jzz = ...
     #inv_J_b = 1/J_b...
     
     # dp_b_rps2
-<<<<<<< HEAD:Controls/v1/sim_/six_dof_model.py
     dx[9] = (L__b_kgm2ps2 + r_b_rps*q_b_rps*(Jyy_b_kgm2 - Jzz_b_kgm2))/Jxx_b_kgm2 #(-(Jzz_b_kgm2*(Jzz_b_kgm2-Jyy_b_kgm2))*q_b_rps*r_b_rps + Jzz_b_kgm2*L_b_kgm2ps2) / (Jxx_b_kgm2*Jzz_b_kgm2) 
     # dq_b_rps2
     dx[10] = (M__b_kgm2ps2 + p_b_rps*r_b_rps*(Jzz_b_kgm2 - Jxx_b_kgm2))/Jyy_b_kgm2 #(Jzz_b_kgm2-Jxx_b_kgm2)*r_b_rps*p_b_rps + M_b_kgm2ps2) / Jyy_b_kgm2
     # dr_b_rps2
     dx[11] = (N__b_kgm2ps2 + p_b_rps*q_b_rps*(Jyy_b_kgm2 - Jxx_b_kgm2))/Jzz_b_kgm2 #((Jxx_b_kgm2*(Jxx_b_kgm2-Jyy_b_kgm2))*q_b_rps*p_b_rps + Jxx_b_kgm2*N_b_kgm2ps2) / (Jxx_b_kgm2*Jzz_b_kgm2)
-=======
-    dx[3] = 1/Jxx_b_kgm2*(L__b_kgm2ps2) #+ r_b_rps*q_b_rps*(Jyy_b_kgm2 - Jzz_b_kgm2)) #(-(Jzz_b_kgm2*(Jzz_b_kgm2-Jyy_b_kgm2))*q_b_rps*r_b_rps + Jzz_b_kgm2*L_b_kgm2ps2) / (Jxx_b_kgm2*Jzz_b_kgm2) 
-    # dq_b_rps2
-    dx[4] = 1/Jyy_b_kgm2*(M__b_kgm2ps2) #+ p_b_rps*r_b_rps*(Jzz_b_kgm2 - Jxx_b_kgm2)) #(Jzz_b_kgm2-Jxx_b_kgm2)*r_b_rps*p_b_rps + M_b_kgm2ps2) / Jyy_b_kgm2
-    # dr_b_rps2
-    dx[5] = 1/Jzz_b_kgm2*(N__b_kgm2ps2) #+ p_b_rps*q_b_rps*(Jyy_b_kgm2 - Jxx_b_kgm2)) #((Jxx_b_kgm2*(Jxx_b_kgm2-Jyy_b_kgm2))*q_b_rps*p_b_rps + Jxx_b_kgm2*N_b_kgm2ps2) / (Jxx_b_kgm2*Jzz_b_kgm2)
->>>>>>> 7f39d69 (first working sim):Controls/v1/sim_/y/six_dof_model.py
 
     #Body orientation (angles) CS (Coordinate system) wrt NED (North East Down) CS (inertial)
 

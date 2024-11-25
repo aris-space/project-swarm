@@ -29,19 +29,19 @@ class depth_ctrl:
         self.current_detectable_depth = imu_depth
         return self.current_detectable_depth
 
-    def update_ddr(self): #desired depth rate, should be called after new depth data is given
-        self.desired_depth_rate = self.depth_controller.update(self.desired_depth, self.current_detectable_depth, self.dt)
-        print("desired depth rate: ", self.desired_depth_rate)
+    def update_ddr(self, skip=False): #desired depth rate, should be called after new depth data is given
+        self.desired_depth_rate = self.depth_controller.update(self.desired_depth, self.current_detectable_depth, self.dt, skip)
+        #print("desired depth rate: ", self.desired_depth_rate)
         return self.desired_depth_rate
    
     def update_cddr(self, imu_depth_rate): #current depth rate, should be called if new depth rate data is available
         self.current_detectable_depth_rate = imu_depth_rate
         return self.current_detectable_depth_rate
     
-    def update_dt(self): #desired thrust, should be called after desired depth rate is calculated
-        self.desired_thrust = self.depth_rate_controller.update(self.desired_depth_rate, self.current_detectable_depth_rate, self.dt)
+    def update_dt(self, skip=False): #desired thrust, should be called after desired depth rate is calculated
+        self.desired_thrust = self.depth_rate_controller.update(self.desired_depth_rate, self.current_detectable_depth_rate, self.dt, skip)
         self.current_detectable_thrust = self.desired_thrust
-        print("desired thrust: ", self.desired_thrust)
+        #print("desired thrust: ", self.desired_thrust)
         return self.desired_thrust
 
     def append_to_state(self, state):

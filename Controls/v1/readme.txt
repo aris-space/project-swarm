@@ -4,15 +4,18 @@ sim_ computes vehicle response to thrust torques, plots and gives sensor data ba
 than torques and thrusts are given via a torch vec
 
 To-Do's:
-- implement more complex dynamics model
+- implement more complex dynamics model (with gravity & boyancy) o
+- implement forward controller /
+- implement sim sensor noise /
+- implement sensor noise filter o
+- implement disturbances /
+- implement scaling to [-1000,1000] and mavlink communication o
+
 - implement 3d visualisation => more or less done
-- implement orientation assertion also for depth control to avoid gimbal lock
-- implement saturation
-- implement forward controller
-- implement sim sensor noise
-- implement sensor noise filter
-- implement disturbances
-- implement scaling to [-1000,1000] and mavlink communication
+- implement saturation and anti-windup, set point weighting => done
+- implement orientation assertion also for depth control to avoid gimbal lock => done
+
+
 
 Our naming scheme => the state vector also has the following sequence:
 postitions:
