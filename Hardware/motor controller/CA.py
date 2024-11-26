@@ -19,9 +19,10 @@ pi = pigpio.pi()
 
 class motor:
 
-    def __init__(self, motor_nr_def: int, pin_def: int, reversed_def: bool): # todo: add reversed
+    def __init__(self, pin_def: int, reversed_def: bool): # todo: add reversed
 
-        self.motor_nr = motor_nr_def
+        #self.motor_nr = motor_nr_def # redundant atm
+
         self.pin = pin_def
         self.reversed = reversed_def
 
