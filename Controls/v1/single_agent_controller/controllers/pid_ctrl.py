@@ -75,6 +75,6 @@ class PID:
         
         else:
             self.previous_time = time.time()
-            return 0
+            return 0.0
         
 

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from single_agent_controller.controllers.depth_ctrl import depth_ctrl
-from single_agent_controller.controllers.angle_ctrl import angle_ctrl
+#from single_agent_controller.controllers.depth_ctrl import depth_ctrl
 from single_agent_controller.controllers.pid_ctrl import PID
 from single_agent_controller.controllers.pid_ctrl_w_error import PID_w_error
 from utils.waypoints import *
+
+from v1.single_agent_controller.controllers.ca_system import SCA
 
 from utils.constants2 import *
 
@@ -20,12 +21,25 @@ class LLC2:
     """controller for pitch (rotation around local y-axis) => controls euler angles, due to the small changes in angle, they are deemed independant of each other"""
     local_yaw_ctrl: PID_w_error = None
     """controller for yaw (rotation around local z-axis) => controls euler angles, due to the small changes in angle, they are deemed independant of each other"""
+    
     local_roll_rate_ctrl: PID = None
     """controller for roll rate (angular rate around local x-axis) => controls euler rates, due to the small changes in rate, they are deemed independant of each other"""
     local_pitch_rate_ctrl: PID = None
     """controller for pitch rate (angular rate around local y-axis) => controls euler rates, due to the small changes in rate, they are deemed independant of each other"""
     local_y_rate_ctrl: PID = None
     """controller for yaw rate (angular rate around local z-axis) => controls euler rates, due to the small changes in rate, they are deemed independant of each other"""
+
+    local_x_ctrl: PID
+    """controller for x position => controls position in local x direction"""
+    local_z_ctrl: PID
+    """controller for z position => controls position in local z (depth) direction"""
+
+    local_x_vel_ctrl: PID
+    """controller for x velocity => controls velocity in local x direction"""
+    local_z_vel_ctrl: PID
+    """controller for z velocity => controls velocity in local z (depth) direction"""
+
+    
     global_orientation_estimate_quat: np.ndarray
     """global orientation estimate quaternion => scalar last"""
     global_orientation_target_quat: np.ndarray
@@ -49,6 +63,8 @@ class LLC2:
     def __init__(self, pid_params:dict, init_params:dict):
         """
         Initialize six PIDs, one for each angle and one for each rate in the local frame
+        Initialize two PIDs, one for x position and one for x velocity in the local frame
+        Initialize two PIDs, one for z position and one for z velocity in the local frame
         Initialize the global orientation estimate quaternion based on the initial euler yaw, pitch, roll
         Initialize the global orientation target quaternion based on the first waypoint
         Initialize the desired local angular rates to zero
@@ -64,21 +80,39 @@ class LLC2:
         self.local_roll_rate_ctrl = PID(**pid_params['roll']['rate'])
         self.local_pitch_rate_ctrl = PID(**pid_params['pitch']['rate'])
         self.local_yaw_rate_ctrl = PID(**pid_params['yaw']['rate'])
+
+        self.local_x_ctrl = PID(**pid_params['x']['abs'])
+        self.local_z_ctrl = PID(**pid_params['z']['abs'])
+
+        self.local_x_vel_ctrl = PID(**pid_params['x']['vel'])
+        self.local_z_vel_ctrl = PID(**pid_params['z']['vel'])
         
         self.global_orientation_estimate_quat = self.euler_zyx_to_quaternion(init_params['yaw_init'], init_params['pitch_init'], init_params['roll_init'])
         self.global_orientation_target_quat = self.euler_zyx_to_quaternion(waypoints[0]['yaw'], waypoints[0]['pitch'], waypoints[0]['roll'])
+
+        self.global_position_estimate = np.array(init_params['x_init'], init_params['y_init'], init_params['z_init'])
+        self.global_position_target = np.array([waypoints[0]['x'], waypoints[0]['y'], waypoints[0]['z']])
 
         self.actual_local_roll_rate = init_params['roll_rate_init']
         self.actual_local_pitch_rate = init_params['pitch_rate_init']
         self.actual_local_yaw_rate = init_params['yaw_rate_init']
 
+        self.actual_local_x_vel = init_params['x_vel_init']
+        self.actual_local_z_vel = init_params['z_vel_init']
+
         self.desired_local_roll_rate = 0.0
         self.desired_local_pitch_rate = 0.0
         self.desired_local_yaw_rate = 0.0
 
+        self.desired_local_x_vel = 0.0
+        self.desired_local_z_vel = 0.0
+
         self.local_x_torque = 0.0
         self.local_y_torque = 0.0
         self.local_z_torque = 0.0
+
+        self.local_x_thrust = 0.0
+        self.local_y_thrust = 0.0
 
         self.dt = T_LLC
 
@@ -152,6 +186,54 @@ class LLC2:
         self.actual_local_roll_rate = local_roll_rate
         self.actual_local_pitch_rate = local_pitch_rate
         self.actual_local_yaw_rate = local_yaw_rate
+
+    def update_z_pid(self, dt=1/LLC_FREQ):
+        """
+        checks if orientation is alright; then updates the z position pid to get desired z velocity
+        """
+
+        if self.check_orientation_for_z_ctrl():
+            self.desired_local_z_vel = self.local_z_ctrl.update(self.global_position_target[2], self.global_position_estimate, skip=False)
+        else:
+            self.desired_local_z_vel = self.local_z_ctrl.update(self.global_position_target[2], self.global_position_estimate, skip=True)
+
+    def update_z_vel_pid(self, dt=1/LLC_FREQ):
+        """
+        checks if orientation is alright; then updates the z velocity pid to get desired z thrust
+        """
+
+        if self.check_orientation_for_z_ctrl():
+            self.local_z_torque = self.local_z_vel_ctrl.update(self.desired_local_z_vel, self.actual_local_z_vel, skip=False)
+        else:
+            self.local_z_torque = self.local_z_vel_ctrl.update(self.desired_local_z_vel, self.actual_local_z_vel, skip=True)
+
+
+    def check_orientation_for_z_ctrl(self):
+        """
+        check if the pitch and roll orientation is within a certain threshold of the target orientation and the rates close to 0
+        """
+
+        euler_x, euler_y, _ = self.quaternion_to_euler_zyx(self.global_orientation_estimate_quat)
+        euler_x_target, euler_y_target, _ = self.quaternion_to_euler_zyx(self.global_orientation_target_quat)
+
+        return np.abs(euler_x - euler_x_target) < ANG_MARGIN and np.abs(euler_y - euler_y_target) < ANG_MARGIN and np.abs(self.actual_local_roll_rate) < ANG_RATE_MARGIN and np.abs(self.actual_local_pitch_rate) < ANG_RATE_MARGIN
+    
+    def check_orientation_for_x_ctrl(self):
+        """
+        check if the pitch, roll and yaw orientation is within a certain threshold of the target orientation and the rates close to 0
+        """
+
+        euler_x, euler_y, euler_z = self.quaternion_to_euler_zyx(self.global_orientation_estimate_quat)
+        euler_x_target, euler_y_target, euler_z_target = self.quaternion_to_euler_zyx(self.global_orientation_target_quat)
+
+        return np.abs(euler_x - euler_x_target) < ANG_MARGIN and np.abs(euler_y - euler_y_target) < ANG_MARGIN and np.abs(euler_z - euler_z_target) < ANG_MARGIN and np.abs(self.actual_local_roll_rate) < ANG_RATE_MARGIN and np.abs(self.actual_local_pitch_rate) < ANG_RATE_MARGIN and np.abs(self.actual_local_yaw_rate) < ANG_RATE_MARGIN
+    
+    def convert_global_x_y_to_local_x_yaw(self):
+        """
+        Todo: calculate delta x and y, then convert to polar coordinates (x,yaw))
+        """
+        pass
+    
 
     #from now on, the following functions are helper functions
     

@@ -1,0 +1,49 @@
+import pigpio
+import time
+from scipy.interpolate import interp1d
+from utils.constants2 import *
+
+# map PWM timing to range of -100 to 100
+T = interp1d([-100,100],[1100,1900])
+
+# Initialize pigpio
+pi = pigpio.pi()
+
+
+class MCA:
+
+    def __init__(self, pin_def: int, reversed_def: bool): # todo: add reversed
+
+        #self.motor_nr = motor_nr_def # redundant atm
+
+        self.pin = pin_def
+        self.reversed = reversed_def
+
+        # Startup ESC
+
+        pi.set_PWM_frequency(self.pin, FREQUENCY) # set frequency
+        pi.set_servo_pulsewidth(self.pin, ESC_NEUTRAL)  # Set neutral position
+        time.sleep(0.05) # need to leave signal at neutral for a quick moment such that the ESC will start up
+
+        return None
+
+    def set_thrust(self, thrust):
+        # Note: for start "speed" we assume linear relationship
+        # However this function should handle non linear tuning later on
+        # sanity check
+        if thrust not in range(-100,101):
+            raise ValueError("Speed must be in range [-100,100]")
+        
+        #check if eversed
+        if self.reversed:
+            pi.set_servo_pulsewidth(self.pin, T(-thrust))
+        else:
+            pi.set_servo_pulsewidth(self.pin, T(thrust))
+
+
+        return None
+
+
+
+
+
