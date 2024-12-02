@@ -1,6 +1,5 @@
 from single_agent_controller.controllers.low_level_ctrl_2 import LLC2
 from single_agent_controller.controllers_utils.helpers import *
-from single_agent_controller.controllers.ca_system import SCA
 
 from single_agent_simulator.x.system_dynamics import *
 from single_agent_simulator.x.ode_solver import *
@@ -15,8 +14,6 @@ from utils.constants2 import *
 
 import matplotlib.pyplot as plt
 import numpy as np
-import csv
-import os
 
 
 if __name__ == "__main__":
@@ -25,7 +22,7 @@ if __name__ == "__main__":
     open('total_state.log', 'w').close()
 
     #initialize llc with initial state and store time 
-    llc = LLC2(CONSTANTS['pid_params'], CONSTANTS['init_params'], LLC_FREQ)
+    llc = LLC2(CONSTANTS['pid_params'], CONSTANTS['init_params'])
     last_update = time.time()
 
     #3x2 array for roll, pitch, yaw and their rates from the init_params
@@ -47,13 +44,13 @@ if __name__ == "__main__":
             print(torquex,torquey,torquez)
 
             #convert torques to angular accelerations:
-            angle_state[0,2] = #todo
-            angle_state[1,2] = #todo
-            angle_state[2,2] = #todo
+            angle_state[0,2] = 0#todo
+            angle_state[1,2] = 0#todo
+            angle_state[2,2] = 0#todo
 
-            angle_state[0,:2] = rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
-            angle_state[1,:2] = rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
-            angle_state[2,:2] = rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
+            angle_state[0,:2] = np.array[0,0]#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
+            angle_state[1,:2] = np.array[0,0]#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
+            angle_state[2,:2] = np.array[0,0]#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
 
 
             #log rate rates in a log file
