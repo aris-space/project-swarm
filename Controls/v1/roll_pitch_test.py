@@ -4,10 +4,12 @@ from single_agent_controller.controllers.ca_system import SCA
 
 from single_agent_simulator.x.system_dynamics import *
 from single_agent_simulator.x.ode_solver import *
+from single_agent_simulator.y.helpers import *
+from single_agent_simulator.y.six_dof_model import *
+
 
 from single_agent_visualiser.vector_visualiser import *
 from single_agent_visualiser.log_visualiser import *
-
 
 from utils.waypoints import *
 from utils import CONSTANTS
@@ -36,8 +38,13 @@ if __name__ == "__main__":
     ])
 
     with open('total_state.log', 'ab') as log:
+    
+        vehicle_model, t_s, h_s, x = initialize()
 
-        for i in range(1000): #planner updates
+        print(x)
+
+"""
+        for i in range(1,len(t_s)): #planner updates
 
             #update angle PID
             llc.update_angle_pids()
@@ -45,15 +52,27 @@ if __name__ == "__main__":
             #update angle rate PID
             torquex, torquey, torquez = llc.update_angle_rate_pids()
             print(torquex,torquey,torquez)
+            
+            x[15] = torquex
+            x[16] = torquey
+            x[16] = torquez
 
             #convert torques to angular accelerations:
             angle_state[0,2] = #todo
             angle_state[1,2] = #todo
             angle_state[2,2] = #todo
+            
+            k1 = state_equations(x[:,i-1], vehicle_model)
+            k2 = state_equations(x[:,i-1] + h_s*k1/2, vehicle_model)
+            k3 = state_equations(x[:,i-1] + h_s*k2/2, vehicle_model)
+            k4 = state_equations(x[:,i-1] + h_s*k3, vehicle_model)
 
-            angle_state[0,:2] = rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
-            angle_state[1,:2] = rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
-            angle_state[2,:2] = rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
+            x[:,i] = x[:,i-1] + (h_s/6)*(k1+2*k2+2*k3+k4)
+
+
+            angle_state[0,:2] = #rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
+            angle_state[1,:2] = #rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
+            angle_state[2,:2] = #rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
 
 
             #log rate rates in a log file
@@ -66,3 +85,5 @@ if __name__ == "__main__":
     # Plot the data
 
     #sanity check: yaw angle should be constant, yaw rate & z torque should be zero
+    
+    """
