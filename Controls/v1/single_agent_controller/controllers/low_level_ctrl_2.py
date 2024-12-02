@@ -90,7 +90,7 @@ class LLC2:
         self.global_orientation_estimate_quat = self.euler_zyx_to_quaternion(init_params['yaw_init'], init_params['pitch_init'], init_params['roll_init'])
         self.global_orientation_target_quat = self.euler_zyx_to_quaternion(waypoints[0]['yaw'], waypoints[0]['pitch'], waypoints[0]['roll'])
 
-        self.global_position_estimate = np.array(init_params['x_init'], init_params['y_init'], init_params['z_init'])
+        self.global_position_estimate = np.array([init_params['x_init'], init_params['y_init'], init_params['z_init']])
         self.global_position_target = np.array([waypoints[0]['x'], waypoints[0]['y'], waypoints[0]['z']])
 
         self.actual_local_roll_rate = init_params['roll_rate_init']
