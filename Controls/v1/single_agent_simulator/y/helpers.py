@@ -30,6 +30,7 @@ def initialize_vehicle():
 def initialize_states():
     config_path = os.path.join(os.path.dirname(__file__), "sim_config.yaml")
     config = load_config(config_path)
+    #print(config)
     states = np.array(list(config["initial_states"].values()))
     return states
 
@@ -53,7 +54,6 @@ def initialize_time_state_matrix():
 def initialize():
     vehicle_model = initialize_vehicle()
     t_s, x = initialize_time_state_matrix()
-
     config_path = os.path.join(os.path.dirname(__file__), "sim_config.yaml")
     config = load_config(config_path)
     h_s = 1/config["frequency"]

@@ -18,7 +18,7 @@ def simple_system_dynamics(actual_state:np.ndarray, u:np.ndarray, a=0.0, b=0.0):
     return np.array([x_dot, x_dot_dot])
 
 
-def state_equations(t_s: np.array, x: np.array, vehicle_model: dict):
+def state_equations2(x: np.array, vehicle_model: dict):
     """Attributes:
     t_ms == time, x == Vector of current states, vehicle_model == dict of vehicle properties
     

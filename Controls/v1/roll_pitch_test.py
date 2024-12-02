@@ -29,19 +29,18 @@ if __name__ == "__main__":
 
     #3x2 array for roll, pitch, yaw and their rates from the init_params
     angle_state = np.array([
-        np.array([CONSTANTS['init_params']['roll_init'], CONSTANTS['init_params']['roll_rate_init'], CONSTANTS['init_params']['roll_acc_init']]), 
-        np.array([CONSTANTS['init_params']['pitch_init'], CONSTANTS['init_params']['pitch_rate_init'], CONSTANTS['init_params']['pitch_acc_init']]), 
-        np.array([CONSTANTS['init_params']['yaw_init'], CONSTANTS['init_params']['yaw_rate_init'], CONSTANTS['init_params']['yaw_acc_init']])
+        np.array([CONSTANTS['init_params']['roll_init'], CONSTANTS['init_params']['roll_rate_init']]),#, CONSTANTS['init_params']['roll_acc_init']]), 
+        np.array([CONSTANTS['init_params']['pitch_init'], CONSTANTS['init_params']['pitch_rate_init']]),#, CONSTANTS['init_params']['pitch_acc_init']]), 
+        np.array([CONSTANTS['init_params']['yaw_init'], CONSTANTS['init_params']['yaw_rate_init']])#, CONSTANTS['init_params']['yaw_acc_init']])
     ])
 
     with open('total_state.log', 'ab') as log:
     
         vehicle_model, t_s, h_s, x = initialize()
+        x[3,0] = angle_state[0,0]
 
-        print(x)
 
-"""
-        for i in range(1,len(t_s)): #planner updates
+        for i in range(1,1000): #planner updates
 
             #update angle PIDs
             llc.update_angle_pids()
@@ -54,13 +53,9 @@ if __name__ == "__main__":
             x[16] = torquey
             x[16] = torquez
 
-            state_for_sim = np.zeros(18)
-
 
             #convert torques to angular accelerations:
-            angle_state[0,2] = #todo
-            angle_state[1,2] = #todo
-            angle_state[2,2] = #todo
+
             
             k1 = state_equations(x[:,i-1], vehicle_model)
             k2 = state_equations(x[:,i-1] + h_s*k1/2, vehicle_model)
@@ -73,14 +68,10 @@ if __name__ == "__main__":
             #angle_state[1,2] = 0#todo
             #angle_state[2,2] = 0#todo
 
-            #angle_state[0,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
-            #angle_state[1,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
-            #angle_state[2,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
+            angle_state[0,:] = np.array(x[3,i], x[9,i]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
+            angle_state[1,:] = np.array(x[4,i], x[10,i]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
+            angle_state[2,:] = np.array(x[5,i], x[11,i]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
 
-
-            angle_state[0,:2] = #rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
-            angle_state[1,:2] = #rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
-            angle_state[2,:2] = #rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
 
             #update angle state in controller
             llc.update_global_orientation_w_state(angle_state[2,0],angle_state[1,0],angle_state[0,0])
@@ -97,7 +88,7 @@ if __name__ == "__main__":
     time_p = np.arange(len(data))
 
     # Plot the data
+    plot(t_s, x)
 
     #sanity check: yaw angle should be constant, yaw rate & z torque should be zero
     
-    """

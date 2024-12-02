@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-def state_equations(t_s: np.array, x: np.array, vehicle_model: dict):
+def state_equations(x: np.array, vehicle_model: dict):
     """Attributes:
     t_ms == time, x == Vector of current states, vehicle_model == dict of vehicle properties
     
@@ -58,14 +58,14 @@ def state_equations(t_s: np.array, x: np.array, vehicle_model: dict):
     N__b_kgm2ps2 = x[17]
 
     #Position !!!NOT IN GLOBAL FRAME!!!
-    dx[0] = 0 #x[6]
-    dx[1] = 0 #x[7]
-    dx[2] = 0 #x[8] 
+    dx[0] = x[6]
+    dx[1] = x[7]
+    dx[2] = x[8] 
 
     #Rotation !!!NOT IN GLOBAL FRAME!!!
-    dx[3] = 0 #x[9]
-    dx[4] = 0 #x[10]
-    dx[5] = 0 #x[11]
+    dx[3] = x[9]
+    dx[4] = x[10]
+    dx[5] = x[11]
 
     #Equations of motion
     #Translational equations
