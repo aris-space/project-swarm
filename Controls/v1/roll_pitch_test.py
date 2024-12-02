@@ -58,7 +58,6 @@ if __name__ == "__main__":
 
 
             #convert torques to angular accelerations:
-<<<<<<< HEAD
             angle_state[0,2] = #todo
             angle_state[1,2] = #todo
             angle_state[2,2] = #todo
@@ -70,19 +69,18 @@ if __name__ == "__main__":
 
             x[:,i] = x[:,i-1] + (h_s/6)*(k1+2*k2+2*k3+k4)
 
+            #angle_state[0,2] = 0#todo
+            #angle_state[1,2] = 0#todo
+            #angle_state[2,2] = 0#todo
+
+            #angle_state[0,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
+            #angle_state[1,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
+            #angle_state[2,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
+
 
             angle_state[0,:2] = #rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
             angle_state[1,:2] = #rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
             angle_state[2,:2] = #rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
-=======
-            angle_state[0,2] = 0#todo
-            angle_state[1,2] = 0#todo
-            angle_state[2,2] = 0#todo
-
-            angle_state[0,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
-            angle_state[1,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
-            angle_state[2,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
->>>>>>> refs/remotes/origin/Develop
 
             #update angle state in controller
             llc.update_global_orientation_w_state(angle_state[2,0],angle_state[1,0],angle_state[0,0])
