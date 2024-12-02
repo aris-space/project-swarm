@@ -36,12 +36,15 @@ if __name__ == "__main__":
 
         for i in range(1000): #planner updates
 
-            #update angle PID
+            #update angle PIDs
             llc.update_angle_pids()
 
-            #update angle rate PID
+            #update angle rate PIDs
             torquex, torquey, torquez = llc.update_angle_rate_pids()
             print(torquex,torquey,torquez)
+
+            state_for_sim = np.zeros(18)
+
 
             #convert torques to angular accelerations:
             angle_state[0,2] = 0#todo
@@ -52,9 +55,15 @@ if __name__ == "__main__":
             angle_state[1,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
             angle_state[2,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
 
+            #update angle state in controller
+            llc.update_global_orientation_w_state(angle_state[2,0],angle_state[1,0],angle_state[0,0])
+
+            #updae angle rate state in controller
+            llc.update_actual_local_rates(angle_state[0,1],angle_state[1,1],angle_state[2,1])
 
             #log rate rates in a log file
             np.savetxt(log, angle_state.reshape(1, -1), delimiter=',')
+
                                 
     # Load the logged data
     data = np.loadtxt('total_state.log', delimiter=',')

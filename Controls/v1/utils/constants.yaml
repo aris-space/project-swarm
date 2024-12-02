@@ -1,7 +1,7 @@
 init_params:
-  roll_init: 0.1
-  pitch_init: 0.2
-  yaw_init: 0.3
+  roll_init: 0.0
+  pitch_init: 0.0
+  yaw_init: 0.0
   roll_rate_init: 0.0
   pitch_rate_init: 0.0
   yaw_rate_init: 0.0
