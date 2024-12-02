@@ -6,7 +6,7 @@ from scipy.interpolate import interp1d
 T = interp1d([-100,100],[1100,1900])
 
 
-# Setup
+# Setup change 
 #PWM_PINS = [18, 19, 23, 24]  # GPIO pins for PWM signals
 FREQUENCY = 200              # PWM frequency in Hz
 ESC_MIN = 1100               # Minimum pulse width (1.1 ms) for ESC (idle/stop)
@@ -30,7 +30,7 @@ class motor:
 
         pi.set_PWM_frequency(self.pin, FREQUENCY) # set frequency
         pi.set_servo_pulsewidth(self.pin, ESC_NEUTRAL)  # Set neutral position
-        time.sleep(0.05) # need to leave signal at neutral for a quick moment such that the ESC will start up
+        time.sleep(0.5) # need to leave signal at neutral for a quick moment such that the ESC will start up
 
         return None
 
@@ -38,12 +38,13 @@ class motor:
         # Note: for start "speed" we assume linear relationship
         # However this function should handle non linear tuning later on
         # sanity check
-        if thrust not in range(-100,101):
-            raise ValueError("Speed must be in range [-100,100]")
+        if thrust not in range(-40,41): # warning. 100 is veeryy fast! If safety doesn't trigger. Run!
+            raise ValueError("Speed must be in range [-40,40]")
         
         #check if eversed
         if self.reversed:
-            pi.set_servo_pulsewidth(self.pin, T(-thrust))
+            #print("is reversed: ", T(-thrust))
+            pi.set_servo_pulsewidth(self.pin, T(-thrust -5)) # fine tuning for dead zone
         else:
             pi.set_servo_pulsewidth(self.pin, T(thrust))
 

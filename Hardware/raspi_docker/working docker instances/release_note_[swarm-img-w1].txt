@@ -1,0 +1,17 @@
+!!!: docker image can be found in sharepoint
+
+
+in swarm-img-w1.tar the dummy controller needs slight adjustment
+Motor allocation:
+
+motor1 = CA.motor(8,True)
+motor2 = CA.motor(7,False)
+motor3 = CA.motor(6,True)
+motor4 = CA.motor(9,False)
+
+motor5 = CA.motor(5,True)
+motor6 = CA.motor(4,True)
+motor7 = CA.motor(3,False)
+motor8 = CA.motor(2,False)
+
+
