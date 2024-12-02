@@ -48,9 +48,9 @@ if __name__ == "__main__":
             angle_state[1,2] = 0#todo
             angle_state[2,2] = 0#todo
 
-            angle_state[0,:2] = np.array[0,0]#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
-            angle_state[1,:2] = np.array[0,0]#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
-            angle_state[2,:2] = np.array[0,0]#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
+            angle_state[0,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
+            angle_state[1,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
+            angle_state[2,:2] = np.array([0,0])#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
 
 
             #log rate rates in a log file
