@@ -7,9 +7,9 @@ dimensions:
 
 # Initial Conditions
 
-inital_states:
+initial_states:
   x0: 0                               # m
-  y0: 0                               # m
+  y0: 0.                               # m
   z0: 0                               # m
   roll0: 0                            # rad
   pitch0: 0                           # rad

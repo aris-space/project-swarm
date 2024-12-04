@@ -1,8 +1,3 @@
-planner gives a target dictionary to sac_
-sac_ gives torch vec to sim_ with torques and thrust
-sim_ computes vehicle response to thrust torques, plots and gives sensor data back at a slower freq
-than torques and thrusts are given via a torch vec
-
 To-Do's:
 - implement more complex dynamics model (with gravity & boyancy) o
 - implement forward controller /
@@ -17,7 +12,7 @@ To-Do's:
 
 
 
-Our naming scheme => the state vector also has the following sequence:
+Our naming scheme:
 postitions:
     x, y, z
 angles:
@@ -30,6 +25,8 @@ thrusts:
     x_thrust, y_thrust, z_thrust
 torques:
     x_torque, y_torque, z_torque
+
+
 
 
 

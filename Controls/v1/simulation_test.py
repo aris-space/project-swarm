@@ -1,4 +1,4 @@
-from single_agent_controller.controllers.low_level_ctrl import LLC
+#from single_agent_controller.controllers.low_level_ctrl import LLC
 from single_agent_controller.controllers_utils.helpers import *
 from single_agent_simulator.x.system_dynamics import *
 from single_agent_simulator.x.ode_solver import *
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     skip_depth = True
 
-    """
+
 
     with open('total_state.log', 'ab') as f:
 
@@ -101,9 +101,10 @@ if __name__ == "__main__":
 
                             for _ in range(SIM_FREQ // LLC_FREQ): #sim updates
                                 #update angles with RK4
-                                angle_state[0,:] = rk4(simple_system_dynamics, angle_state[0,:], prev_torques[0], torquex, SIM_FREQ)
-                                angle_state[1,:] = rk4(simple_system_dynamics, angle_state[1,:], prev_torques[1], torquey, SIM_FREQ)
-                                angle_state[2,:] = rk4(simple_system_dynamics, angle_state[2,:], prev_torques[2], torquez, SIM_FREQ)
+
+                                angle_state[0,:] = rk4(state_equations, angle_state[0,:], prev_torques[0], torquex, SIM_FREQ)
+                                angle_state[1,:] = rk4(state_equations, angle_state[1,:], prev_torques[1], torquey, SIM_FREQ)
+                                angle_state[2,:] = rk4(state_equations, angle_state[2,:], prev_torques[2], torquez, SIM_FREQ)
                                 #print(angle_state)
                                 #print(llc.roll_ctrl.current_detectable_angle)
                                 #print(llc.pitch_ctrl.current_detectable_angle)
@@ -137,8 +138,10 @@ if __name__ == "__main__":
     # Plot the data
     log_visualiser(time_p, data)
 
-    """
 
+
+
+    """
 
 
     llc2 = LLC2(CONSTANTS['pid_params'], CONSTANTS['init_params'])
@@ -228,3 +231,5 @@ if __name__ == "__main__":
     #die tatsächlichen local angular rates zurückerhalten und abspeichern => done
     #das neue globale quaternion erhalten mit q_new = q_current + dt/2 * Omega ('angular vel. matr.) * q current => done
     #berechnung, der benötigten winkelgeschwindigkeiten im globalen frame   
+
+    """

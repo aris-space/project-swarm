@@ -28,8 +28,29 @@ RUNTIME = NUM_PLANNER_UPDATES / PLANNER_FREQ
 
 MASS = 5 #in kg
 
+#Controll allocation constants
+C_ROLL = 0.1
+C_PITCH = 0.1
+
+PIN_TL = 18
+PIN_TR = 19
+PIN_BL = 23
+PIN_BR = 24
+
+REV_TL = False
+REV_TR = False
+REV_BL = False
+REV_BR = False
+
+MOTOR_SATURATION = 100
+
+#PWM constants
+FREQUENCY = 200              # PWM frequency in Hz
+ESC_MIN = 1100               # Minimum pulse width (1.1 ms) for ESC (idle/stop)
+ESC_MAX = 1900               # Maximum pulse width (1.9 ms) for ESC (full throttle)
+ESC_NEUTRAL = 1500           # Neutral pulse width (1.5 ms)
 
 
 
-
-
+#controller test
+CONTROLLER_TEST_DURATION = 10

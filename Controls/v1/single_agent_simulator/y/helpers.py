@@ -1,5 +1,6 @@
 import yaml
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 
 def load_config(file_path):
@@ -7,7 +8,8 @@ def load_config(file_path):
         return yaml.safe_load(file)
 
 def initialize_vehicle():
-    config = load_config("sim_config.yaml")
+    config_path = os.path.join(os.path.dirname(__file__), "sim_config.yaml")
+    config = load_config(config_path)
     height = config["dimensions"]["height"] / 1000  #mm -> m
     width = config["dimensions"]["width"] / 1000    #mm -> m
     depth = config["dimensions"]["depth"] / 1000    #mm -> m
@@ -26,13 +28,15 @@ def initialize_vehicle():
     return vehicle_model
 
 def initialize_states():
-    config = load_config("sim_config.yaml")
-    states = np.array(list(config["inital_states"].values()))
-
+    config_path = os.path.join(os.path.dirname(__file__), "sim_config.yaml")
+    config = load_config(config_path)
+    #print(config)
+    states = np.array(list(config["initial_states"].values()))
     return states
 
 def initialize_time_state_matrix():
-    config = load_config("sim_config.yaml")
+    config_path = os.path.join(os.path.dirname(__file__), "sim_config.yaml")
+    config = load_config(config_path)
     t0_s = 0
     tf_s = config["runtime"]
     h_s = 1/config["frequency"]
@@ -50,8 +54,8 @@ def initialize_time_state_matrix():
 def initialize():
     vehicle_model = initialize_vehicle()
     t_s, x = initialize_time_state_matrix()
-
-    config = load_config("sim_config.yaml")
+    config_path = os.path.join(os.path.dirname(__file__), "sim_config.yaml")
+    config = load_config(config_path)
     h_s = 1/config["frequency"]
 
     return vehicle_model, t_s, h_s, x

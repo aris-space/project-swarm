@@ -1,12 +1,23 @@
 init_params:
-  roll_init: 0.1
-  pitch_init: 0.2
-  yaw_init: 0.3
+  roll_init: 0.5
+  pitch_init: 0.0
+  yaw_init: 0.0
   roll_rate_init: 0.0
   pitch_rate_init: 0.0
   yaw_rate_init: 0.0
-  depth_init: 0.0
-  depth_rate_init: 0.0
+  roll_acc_init: 0.0
+  pitch_acc_init: 0.0
+  yaw_acc_init: 0.0
+  z_init: 0.0
+  z_vel_init: 0.0
+  x_init: 0.0
+  x_vel_init: 0.0
+  y_init: 0.0
+  y_vel_init: 0.0
+  x_acc_init: 0.0
+  y_acc_init: 0.0
+  z_acc_init: 0.0
+
 
   #YXZ
 
@@ -28,25 +39,41 @@ environment_params:
   fluid_density: 1.225
   gravity: 9.81
 
+
+
+
 pid_params:
-  depth:
+  x:
     abs:
       kp: 0.5
       ki: 0.1
       kd: 0.0
-    rate:
+
+    vel:
+      kp: 10.0
+      ki: 5.0
+      kd: 0.0
+      
+  z:
+    abs:
+      kp: 0.5
+      ki: 0.1
+      kd: 0.0
+
+    vel:
       kp: 10.0
       ki: 5.0
       kd: 0.0
 
+
   roll:
     abs:
-      kp: 0.1
+      kp: 0.01 #0.1
       ki: 0.0 #0.001
-      kd: 0.0
+      kd: 0.01
     
     rate:
-      kp: 0.5
+      kp: 1.0 #0.5
       ki: 0.0
       kd: 0.0
 
