@@ -121,7 +121,7 @@ def plot(t_s, x):
     axes[3,2].plot(t_s,x[5,:])
     axes[3,2].set_title("Yaw Angle")
     axes[3,2].set_xlabel("Time [s]")
-    axes[3,2].set_ylabel("psi [m/s]")
+    axes[3,2].set_ylabel("psi [rad]")
 
 
     plt.tight_layout()

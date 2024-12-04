@@ -2,6 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+from itertools import count
+import pandas as pd
+from matplotlib.animation import FuncAnimation
+
+
+
 def plot_orientation(fig=None, ax=None, x=0, y=0, z=0, roll=0, pitch=0, yaw=0):
 
     
@@ -36,6 +42,8 @@ def plot_orientation(fig=None, ax=None, x=0, y=0, z=0, roll=0, pitch=0, yaw=0):
 
     #delete everything on the axis
     ax.clear()
+
+    plt.cla()
     
     ax.set_xlim([-20, 20])
     ax.set_ylim([-20, 20])
@@ -44,10 +52,9 @@ def plot_orientation(fig=None, ax=None, x=0, y=0, z=0, roll=0, pitch=0, yaw=0):
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
 
-    start = [0,0,z]
-    ax.quiver(start[0], start[1], start[2], o[0], o[1], o[2], color='r', length=1, normalize=False)
+    ax.quiver(x, y, z, o[0], o[1], o[2], color='r', length=1, normalize=False)
 
     plt.draw()
-    plt.pause(0.00002)
+    plt.pause(0.002)
 
     return fig, ax

@@ -9,19 +9,28 @@ from single_agent_simulator.y.six_dof_model import *
 
 from single_agent_visualiser.vector_visualiser import *
 from single_agent_visualiser.log_visualiser import *
+from single_agent_visualiser.new_visualiser import Live3DVisualizer
+
 
 from utils.waypoints import *
 from utils import CONSTANTS
 from utils.constants2 import *
 
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
+import pandas as pd
+
+from matplotlib.animation import FuncAnimation
 
 if __name__ == "__main__":
 
+    #enable live matplotlib plotting
+
     #empty log file
     open('total_state.log', 'w').close()
+
+    #plt.ion()
 
     #initialize llc with initial state and store time 
     llc = LLC2(CONSTANTS['pid_params'], CONSTANTS['init_params'])
@@ -38,25 +47,18 @@ if __name__ == "__main__":
     
         vehicle_model, t_s, h_s, x = initialize()
         x[3,0] = angle_state[0,0]
+        x[4,0] = angle_state[1,0]
+        x[5,0] = angle_state[2,0]
 
 
         for i in range(1,1000): #planner updates
 
-            #update angle PIDs
-            llc.update_angle_pids()
-
-            #update angle rate PIDs
-            torquex, torquey, torquez = llc.update_angle_rate_pids()
-            print(torquex,torquey,torquez)
+            torquex, torquey, torquez = llc.update_w_mode1()
             
-            x[15] = torquex
-            x[16] = torquey
-            x[16] = torquez
+            x[15,i-1] = torquex
+            x[16,i-1] = torquey
+            x[17,i-1] = torquez
 
-
-            #convert torques to angular accelerations:
-
-            
             k1 = state_equations(x[:,i-1], vehicle_model)
             k2 = state_equations(x[:,i-1] + h_s*k1/2, vehicle_model)
             k3 = state_equations(x[:,i-1] + h_s*k2/2, vehicle_model)
@@ -64,14 +66,9 @@ if __name__ == "__main__":
 
             x[:,i] = x[:,i-1] + (h_s/6)*(k1+2*k2+2*k3+k4)
 
-            #angle_state[0,2] = 0#todo
-            #angle_state[1,2] = 0#todo
-            #angle_state[2,2] = 0#todo
-
-            angle_state[0,:] = np.array(x[3,i], x[9,i]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
-            angle_state[1,:] = np.array(x[4,i], x[10,i]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
-            angle_state[2,:] = np.array(x[5,i], x[11,i]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
-
+            angle_state[0,:] = np.array([x[3,i], x[9,i]]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[0,1:], torquex, SIM_FREQ)
+            angle_state[1,:] = np.array([x[4,i], x[10,i]]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[1,1:], torquey, SIM_FREQ)
+            angle_state[2,:] = np.array([x[5,i], x[11,i]]) #np.array([0,0])#rk4(complex_system_dynamics, angle_state[2,1:], torquez, SIM_FREQ)
 
             #update angle state in controller
             llc.update_global_orientation_w_state(angle_state[2,0],angle_state[1,0],angle_state[0,0])
@@ -82,13 +79,21 @@ if __name__ == "__main__":
             #log rate rates in a log file
             np.savetxt(log, angle_state.reshape(1, -1), delimiter=',')
 
-                                
+            # if i == 1:
+            #     fig, ax = plot_orientation(x=0, y=0, z=0, roll=angle_state[0,0], pitch=angle_state[1,0], yaw=angle_state[2,0])
+            # else:
+            #     ax.clear()
+            #     fig, ax = plot_orientation(fig, ax, x=0, y=0, z=0, roll=angle_state[0,0], pitch=angle_state[1,0], yaw=angle_state[2,0])
+            # plt.draw()  # Draw the updated plot
+            # plt.pause(0.01-((time.time()-last_update)/1000))  # Pause to update the plot
+
+
+
+        
+
     # Load the logged data
     data = np.loadtxt('total_state.log', delimiter=',')
     time_p = np.arange(len(data))
 
     # Plot the data
     plot(t_s, x)
-
-    #sanity check: yaw angle should be constant, yaw rate & z torque should be zero
-    
