@@ -4,6 +4,7 @@ from single_agent_controller.controllers.depth_ctrl import depth_ctrl
 from single_agent_controller.controllers.angle_ctrl import angle_ctrl
 from single_agent_controller.controllers.pid_ctrl import PID
 from single_agent_controller.controllers.pid_ctrl_w_error import PID_w_error
+from single_agent_controller.controllers.ultraPos import position
 from utils.waypoints import *
 
 from utils.constants2 import *
@@ -44,6 +45,8 @@ class LLC2:
     """local torques => should soon be replaced by class of system"""
     dt: float
     """controller sampling time"""
+    absolute_position: position
+    """position determined via ultrasonic sensors"""
     
 
     def __init__(self, pid_params:dict, init_params:dict):
@@ -152,6 +155,9 @@ class LLC2:
         self.actual_local_roll_rate = local_roll_rate
         self.actual_local_pitch_rate = local_pitch_rate
         self.actual_local_yaw_rate = local_yaw_rate
+
+    def update_absolute_position(self):
+        return [0, 0, 0]
 
     #from now on, the following functions are helper functions
     
