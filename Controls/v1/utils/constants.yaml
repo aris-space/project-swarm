@@ -45,21 +45,21 @@ environment_params:
 pid_params:
   x:
     abs:
-      kp: 0.4
+      kp: 0.8
       ki: 0.0
       kd: 0.0
     vel:
-      kp: 0.8
+      kp: 2.0
       ki: 0.0
       kd: 0.0
 
   y:
     abs:
-      kp: 0.4
+      kp: 0.8
       ki: 0.0
       kd: 0.0
     vel:
-      kp: 0.8
+      kp: 2.0
       ki: 0.0
       kd: 0.0
       

@@ -422,7 +422,10 @@ class LLC2:
 
         Rot_mat = R.from_quat(self.global_orientation_estimate_quat).as_matrix()
 
-        self.desired_local_x_vel, self.desired_local_y_vel, self.desired_local_z_vel = Rot_mat @ np.array([self.desired_global_x_vel, self.desired_global_y_vel, self.desired_global_z_vel])
+        #invert rotation matrix
+        Rot_mat_inverse = np.linalg.inv(Rot_mat)
+
+        self.desired_local_x_vel, self.desired_local_y_vel, self.desired_local_z_vel = Rot_mat_inverse @ np.array([self.desired_global_x_vel, self.desired_global_y_vel, self.desired_global_z_vel])
 
         return self.desired_local_x_vel, self.desired_local_y_vel, self.desired_local_z_vel
 

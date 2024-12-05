@@ -84,13 +84,15 @@ if __name__ == "__main__":
             #fetch angle state from sim
             angle_state[0,:] = np.array([x[3,i], x[9,i]])
             angle_state[1,:] = np.array([x[4,i], x[10,i]])
-            angle_state[2,:] = np.array([x[5,i], x[11,i]]) 
+            angle_state[2,:] = np.array([x[5,i], x[11,i]])
 
-            #update angle state in controller
+            #what needs to happen in sim: give position back in global reference frame, meaning it has to be multiplied by the orientation 
+
+            #update angle state & position state in controller
             llc.update_global_orientation_w_state(angle_state[2,0],angle_state[1,0],angle_state[0,0])
             llc.update_global_position(position_state[0,0],position_state[1,0],position_state[2,0])
 
-            #update angle rate state in controller
+            #update angle rate state & velocity state in controller
             llc.update_actual_local_rates(angle_state[0,1],angle_state[1,1],angle_state[2,1])
             llc.update_actual_local_velocities(position_state[0,1],position_state[1,1],position_state[2,1])
 

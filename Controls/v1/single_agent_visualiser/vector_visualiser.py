@@ -52,7 +52,7 @@ def plot_orientation(fig=None, ax=None, x=0, y=0, z=0, roll=0, pitch=0, yaw=0):
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
 
-    ax.quiver(x, y, z, o[0], o[1], o[2], color='r', length=1, normalize=False)
+    ax.quiver(x, y, z, o[0], o[1], o[2], color='r', length=0.5, normalize=False)
 
     plt.draw()
     plt.pause(0.002)
