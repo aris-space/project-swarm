@@ -1,34 +1,34 @@
 # Physical properties
 mass: 5.0                             # kg
 dimensions:
-  height: 250                         # mm 
-  width: 100                          # mm
-  depth: 400                          # mm
+  height: 250.0                         # mm 
+  width: 100.0                          # mm
+  depth: 400.0                          # mm
 
 # Initial Conditions
 
-inital_states:
-  x0: 0                               # m
-  y0: 0                               # m
-  z0: 0                               # m
-  roll0: 0                            # rad
-  pitch0: 0                           # rad
-  yaw0: 0                             # rad
-  x_rate0: 0                          # mps
-  y_rate0: 0                          # mps
-  z_rate0: 0                          # mps
-  roll_rate0: 0                       # rps
-  pitch_rate0: 0                      # rps
-  yaw_rate0: 0                        # rps
-  x_thrust0: 0                        # kgmps2
-  y_thrust0: 0                        # kgmps2
-  z_thrust0: 0                        # kgmps2
-  x_torque0: 0                        # kgm2ps2
-  y_torque0: 0                        # kgm2ps2
-  z_torque0: 0                        # kgm2ps2
+initial_states:
+  x0: 0.0                               # m
+  y0: 0.0                               # m
+  z0: 0.0                               # m
+  roll0: 0.0                            # rad
+  pitch0: 0.0                          # rad
+  yaw0: 0.0                             # rad
+  x_rate0: 0.0                          # mps
+  y_rate0: 0.0                          # mps
+  z_rate0: 0.0                          # mps
+  roll_rate0: 0.0                       # rps
+  pitch_rate0: 0.0                      # rps
+  yaw_rate0: 0.0                        # rps
+  x_thrust0: 0.0                        # kgmps2
+  y_thrust0: 0.0                        # kgmps2
+  z_thrust0: 0.0                        # kgmps2
+  x_torque0: 0.0                        # kgm2ps2
+  y_torque0: 0.0                        # kgm2ps2
+  z_torque0: 0.0                        # kgm2ps2
 
 # Simulation
 
-frequency: 100                        # Hz
-runtime: 10                           # s
+frequency: 100.0                        # Hz
+runtime: 30.0                           # s
   

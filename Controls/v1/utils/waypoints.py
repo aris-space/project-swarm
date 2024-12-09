@@ -1,10 +1,18 @@
 waypoints = [
     #z at 5, rest 0
-    {'x': None, 'y': None, 'z': 5, 'roll': -0.5, 'pitch': 0.3, 'yaw': 0.8, 'timestamp': 0},
-    {'x': None, 'y': None, 'z': 5, 'roll': 0.5, 'pitch': -0.2, 'yaw': 1.0, 'timestamp': 1},
-    {'x': None, 'y': None, 'z': 10,'roll': 0.2, 'pitch': -0.4, 'yaw': 0.4, 'timestamp': 2},
+    {'x': 10.0, 'y': 20.0, 'z': 15.0, 'roll': 0.2, 'pitch': 0.3, 'yaw': 0.4, 'timestamp': 0},
+
+
+
+
+
+
+
+    
+    {'x': None, 'y': None, 'z': 5, 'roll': 0.5, 'pitch': 0.5, 'yaw': 1.0, 'timestamp': 1},
+    {'x': None, 'y': None, 'z': 10,'roll': 0.2, 'pitch': 0.2, 'yaw': 0.4, 'timestamp': 2},
     {'x': None, 'y': None, 'z': 5, 'roll': 0.5, 'pitch': -0.2, 'yaw': 1.5, 'timestamp': 3},
-    {'x': None, 'y': None, 'z': 0, 'roll': 0.5, 'pitch': -0.2, 'yaw': 1.0, 'timestamp': 4},
+    {'x': None, 'y': None, 'z': 0, 'roll': 0.5, 'pitch': -0.3, 'yaw': 1.0, 'timestamp': 4},
     
     {'x': None, 'y': None, 'z': -5, 'roll': -0.5, 'pitch': 0.3, 'yaw': 0.2, 'timestamp': 1},
     {'x': None, 'y': None, 'z': -5, 'roll': -0.5, 'pitch': 0.3, 'yaw': 0.2, 'timestamp': 1},

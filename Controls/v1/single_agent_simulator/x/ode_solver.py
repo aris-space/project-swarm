@@ -17,7 +17,7 @@ def rk4(vehicle_model, y, u_prev, u_new, dt:float):
     k1 = vehicle_model(y, u_prev)
     k2 = vehicle_model(y + 0.5 * dt * k1, u_prev)
     k3 = vehicle_model(y + 0.5 * dt * k2, u_prev)
-    k4 = vehicle_model(y + dt * k3, u_new)
+    k4 = vehicle_model(y + dt * k3, u_prev)#u_new)
 
     output = np.array(y + (dt / 6) * (k1 + 2 * k2 + 2 * k3 + k4))
 

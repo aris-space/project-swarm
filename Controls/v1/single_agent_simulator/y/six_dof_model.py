@@ -1,7 +1,8 @@
 import math
 import numpy as np
+from utils.constants2 import *
 
-def state_equations(t_s: np.array, x: np.array, vehicle_model: dict):
+def state_equations(x: np.array, vehicle_model: dict):
     """Attributes:
     t_ms == time, x == Vector of current states, vehicle_model == dict of vehicle properties
     
@@ -36,7 +37,7 @@ def state_equations(t_s: np.array, x: np.array, vehicle_model: dict):
     v_b_mps = x[7]
     w_b_mps = x[8]
 
-    #current angular speeds
+    #current angular rates
     p_b_rps = x[9]
     q_b_rps = x[10]
     r_b_rps = x[11]
@@ -57,24 +58,49 @@ def state_equations(t_s: np.array, x: np.array, vehicle_model: dict):
     M__b_kgm2ps2 = x[16]
     N__b_kgm2ps2 = x[17]
 
-    #Position !!!NOT IN GLOBAL FRAME!!!
-    dx[0] = 0 #x[6]
-    dx[1] = 0 #x[7]
-    dx[2] = 0 #x[8] 
+
+    #get rotation matrix from euler angles
+    #Roll
+    phi = x[3]
+    #Pitch
+    theta = x[4]
+    #Yaw
+    psi = x[5]
+
+    rot_mat = euler_to_rotation_matrix(phi, theta, psi)
+
+    #convert local velocities to global velocities
+    v_glob_mps = rot_mat @ np.array([u_b_mps, v_b_mps, w_b_mps])
+
+    dx_glob = np.zeros(3)
+    dx_glob[0] = v_glob_mps[0]
+    dx_glob[1] = v_glob_mps[1]
+    dx_glob[2] = v_glob_mps[2]
+
+
+    # #Position !!!NOT IN GLOBAL FRAME!!!
+    # dx[0] = x[6]
+    # dx[1] = x[7]
+    # dx[2] = x[8]
+
+    #Position in global frame
+    dx[0] = dx_glob[0]
+    dx[1] = dx_glob[1]
+    dx[2] = dx_glob[2]
 
     #Rotation !!!NOT IN GLOBAL FRAME!!!
-    dx[3] = 0 #x[9]
-    dx[4] = 0 #x[10]
-    dx[5] = 0 #x[11]
+    dx[3] = x[9] 
+    dx[4] = x[10]
+    dx[5] = x[11]
 
     #Equations of motion
     #Translational equations
     # du_b_mps2
-    dx[6] = 1/m_kg*Fx_b_kgmps - w_b_mps*q_b_rps + v_b_mps*r_b_rps
+    dx[6] = 1/m_kg*Fx_b_kgmps - u_b_mps*DRAG_COEFFICIENT - w_b_mps*q_b_rps + v_b_mps*r_b_rps #we need drag forces, otherwise system continues to move forever with 0 thrust
     # dv_b_mps2
-    dx[7] = 1/m_kg*Fy_b_kgmps - u_b_mps*r_b_rps + w_b_mps*p_b_rps
+    dx[7] = 1/m_kg*Fy_b_kgmps - v_b_mps*DRAG_COEFFICIENT - u_b_mps*r_b_rps + w_b_mps*p_b_rps #we need drag forces, otherwise system continues to move forever with 0 thrust
     # dw_b_mps2
-    dx[8] = 1/m_kg*Fz_b_kgmps - v_b_mps*p_b_rps + u_b_mps*q_b_rps
+    dx[8] = 1/m_kg*Fz_b_kgmps - w_b_mps*DRAG_COEFFICIENT - v_b_mps*p_b_rps + u_b_mps*q_b_rps #we need drag forces, otherwise system continues to move forever with 0 thrust
 
     #Rotational equations | Moments: M=[L,M,N]T | w=[p,q,r]T angular speed (radiants/second)  
     #Jxx, Jyy, Jzz = ...
@@ -101,3 +127,30 @@ def state_equations(t_s: np.array, x: np.array, vehicle_model: dict):
     dx[17] = 0 #x[17]
     
     return dx
+
+
+def euler_to_rotation_matrix(phi, theta, psi):
+    """
+    Converts Euler angles (phi, theta, psi) in z-y-x sequence to a rotation matrix.
+    """
+    Rz = np.array([
+        [math.cos(psi), -math.sin(psi), 0],
+        [math.sin(psi), math.cos(psi), 0],
+        [0, 0, 1]
+    ])
+
+    Ry = np.array([
+        [math.cos(theta), 0, math.sin(theta)],
+        [0, 1, 0],
+        [-math.sin(theta), 0, math.cos(theta)]
+    ])
+
+    Rx = np.array([
+        [1, 0, 0],
+        [0, math.cos(phi), -math.sin(phi)],
+        [0, math.sin(phi), math.cos(phi)]
+    ])
+
+    # Combined rotation matrix
+    R = Rz @ Ry @ Rx
+    return R
