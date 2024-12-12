@@ -338,8 +338,11 @@ class LLC2:
         self.actual_local_pitch_rate = local_pitch_rate
         self.actual_local_yaw_rate = local_yaw_rate
 
-    def update_absolute_position(self):
-        return [0, 0, 0]
+    def update_absolute_position(self, draw):
+        self.update()
+        if draw:
+            self.update_visual()
+        return self.x, self.y
     
     def update_z_pid(self, dt=1/LLC_FREQ):
 

@@ -14,7 +14,7 @@ motor8 = CA.motor(2,False)
 
 
 
-dhl11 = dht11_driver.Humidity_Sensor()
+dhl11 = dht11_driver.Humidity_aSensor()
 
 # for i in range(30):
 #     dhl11.read_data()
