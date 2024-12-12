@@ -131,18 +131,23 @@ def transform_to_global(local_x, local_y, local_z, robot_global_x, robot_global_
 
     return global_x, global_y, global_z
 
-def transform_bearing_to_global(bearing_local, theta_robot):
+def transform_to_local(global_x, global_y, global_z, robot_global_x, robot_global_y, robot_global_z, theta_robot):
     """
-    Transforms a bearing from the robot's local frame to the global frame.
-    
+    Transforms coordinates from the global frame to the robot's local frame.
+
     Parameters:
-    - bearing_local: Bearing in the robot's local frame (radians).
-    - theta_robot: Robot's yaw angle in the global frame (radians).
-    
+    - global_x, global_y: Coordinates in the global frame.
+    - robot_global_x, robot_global_y: Robot's position in the global frame.
+    - theta_robot: Robot's orientation (yaw angle) in radians.
+
     Returns:
-    - bearing_global: Bearing in the global frame (radians).
+    - local_x, local_y: Coordinates in the robot's local frame.
     """
-    bearing_global = bearing_local + theta_robot
-    # Normalize the angle to be within [-pi, pi]
-    bearing_global = (bearing_global + np.pi) % (2 * np.pi) - np.pi
-    return bearing_global
+    cos_theta = np.cos(theta_robot)
+    sin_theta = np.sin(theta_robot)
+
+    local_x = (global_x - robot_global_x) * cos_theta + (global_y - robot_global_y) * sin_theta
+    local_y = -(global_x - robot_global_x) * sin_theta + (global_y - robot_global_y) * cos_theta
+    local_z = global_z - robot_global_z
+
+    return local_x, local_y, local_z

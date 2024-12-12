@@ -14,3 +14,6 @@ def angular_difference(angle1, angle2):
     - difference: Smallest angular difference in radians.
     """
     return np.arctan2(np.sin(angle1 - angle2), np.cos(angle1 - angle2))
+
+def derivative(state, imu_acceleration, imu_angular_rate):
+    x, y, z, vx, vy, vz, roll, pitch, yaw = state
