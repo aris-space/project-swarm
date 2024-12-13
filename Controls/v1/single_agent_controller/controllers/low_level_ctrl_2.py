@@ -3,7 +3,7 @@ from __future__ import annotations
 #from single_agent_controller.controllers.depth_ctrl import depth_ctrl
 from single_agent_controller.controllers.pid_ctrl import PID
 from single_agent_controller.controllers.pid_ctrl_w_error import PID_w_error
-from single_agent_controller.controllers.ultraPos import position
+from single_agent_controller.controllers.ultraPos import Position
 from utils.waypoints import *
 
 #from v1.single_agent_controller.controllers.ca_system import SCA
@@ -97,7 +97,7 @@ class LLC2:
 
     dt: float
     """controller sampling time"""
-    absolute_position: position
+    absolute_position: Position
     """position determined via ultrasonic sensors"""
     
 
