@@ -33,18 +33,31 @@ DRAG_COEFFICIENT = 0.6
 
 
 #Controll allocation constants
-C_ROLL = 0.1
-C_PITCH = 0.1
+C_ROLL = 0.2
+C_PITCH = 0.2
+C_YAW = 0.2
 
-PIN_TL = 18
-PIN_TR = 19
-PIN_BL = 23
-PIN_BR = 24
+PIN_ZFL = 18
+PIN_ZFR = 19
+PIN_ZBL = 23
+PIN_ZBR = 24
+PIN_XYFL = 99
+PIN_XYFR = 99
+PIN_XYBL = 99
+PIN_XYBR = 99
 
-REV_TL = False
-REV_TR = False
-REV_BL = False
-REV_BR = False
+
+
+REV_ZFL = False
+REV_ZFR = False
+REV_ZBL = False
+REV_ZBR = False
+REV_XYFL = False
+REV_XYFR = False
+REV_XYBL = False
+REV_XYBR = False
+
+
 
 MOTOR_SATURATION = 100
 

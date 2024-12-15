@@ -30,5 +30,5 @@ initial_states:
 # Simulation
 
 frequency: 100.0                        # Hz
-runtime: 30.0                           # s
+runtime: 10.0                           # s
   

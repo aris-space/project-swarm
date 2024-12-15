@@ -61,7 +61,7 @@ if __name__ == "__main__":
         x[5,0] = angle_state[2,0]
 
 
-        for i in range(1,3000): #planner updates
+        for i in range(1, 1000): #planner updates
 
             thrustx, thrusty, thrustz, torquex, torquey, torquez = llc.update_w_mode3()
 
@@ -99,14 +99,14 @@ if __name__ == "__main__":
             #log rate rates in a log file
             np.savetxt(log, angle_state.reshape(1, -1), delimiter=',')
 
-            # if i == 1:
-            #     fig, ax = plot_orientation(x=position_state[0,0], y=position_state[1,0], z=position_state[2,0], roll=angle_state[0,0], pitch=angle_state[1,0], yaw=angle_state[2,0])
-            # else:
-            #     ax.clear()
-            #     fig, ax = plot_orientation(fig, ax, x=position_state[0,0], y=position_state[1,0], z=position_state[2,0], roll=angle_state[0,0], pitch=angle_state[1,0], yaw=angle_state[2,0])
-            # plt.draw()  # Draw the updated plot
-            # plt.pause(0.001)#(0.01-((time.time()-last_update)/1000))  # Pause to update the plot
+            if i == 1:
+                fig, ax = plot_orientation(x=position_state[0,0], y=position_state[1,0], z=position_state[2,0], roll=angle_state[0,0], pitch=angle_state[1,0], yaw=angle_state[2,0], positions=x[0:3,:i], waypoints=[waypoints[0]['x'], waypoints[0]['y'], waypoints[0]['z']])
+            elif i % 5 == 0:
+                ax.clear()
+                fig, ax = plot_orientation(fig, ax, x=position_state[0,0], y=position_state[1,0], z=position_state[2,0], roll=angle_state[0,0], pitch=angle_state[1,0], yaw=angle_state[2,0], positions=x[0:3,:i], waypoints=[waypoints[0]['x'], waypoints[0]['y'], waypoints[0]['z']])
+            plt.draw()  # Draw the updated plot
+            plt.pause(0.00001)#(0.01-((time.time()-last_update)/1000))  # Pause to update the plot
 
 
     # Plot the data
-    plot(t_s, x)
+    plot(t_s, x, waypoints=[waypoints[0]['x'], waypoints[0]['y'], waypoints[0]['z'], waypoints[0]['roll'], waypoints[0]['pitch'], waypoints[0]['yaw']])
