@@ -1,13 +1,13 @@
-from v1.single_agent_controller.controllers.ca_system import LLC2
-from v1.single_agent_controller.controllers.ca_motor import MCA
+from single_agent_controller.controllers.low_level_ctrl_2 import LLC2
+from single_agent_controller.controllers.ca_motor import MCA
 from utils.constants2 import *
 import numpy as np
 
 
 class SCA(LLC2):
-    def __init__(self, LLC):
+    def __init__(self, LLC2):
 
-        self.LLC = LLC()
+        self.llc = LLC2
         
         self.motor_zfl_control_allocation = MCA(pin_def= PIN_ZFL, reversed_def=REV_ZFL)
         self.motor_zfr_control_allocation = MCA(pin_def= PIN_ZFR, reversed_def=REV_ZFR)
@@ -53,21 +53,21 @@ class SCA(LLC2):
 
 
 
-        self.motor_signals = np.zeros(4)
+        self.motor_signals = np.zeros(8)
 
 
     def update_motor_thrusts(self):
 
         # motors are numbered from left to right, from top to bottom
         #motor                  local_x_torque * C_ROLL * +/-1 + local_y_torque * C_PITCH * +/-1
-        self.motor_signals[0] = self.LLC.local_x_torque * C_ROLL * self.control_allocation_matrix['motor_zfl']['roll'] + self.LLC.local_y_torque * C_PITCH * self.control_allocation_matrix['motor_zfl']['pitch']
-        self.motor_signals[1] = self.LLC.local_x_torque * C_ROLL * self.control_allocation_matrix['motor_zfr']['roll'] + self.LLC.local_y_torque * C_PITCH * self.control_allocation_matrix['motor_zfr']['pitch']
-        self.motor_signals[2] = self.LLC.local_x_torque * C_ROLL * self.control_allocation_matrix['motor_zbl']['roll'] + self.LLC.local_y_torque * C_PITCH * self.control_allocation_matrix['motor_zbl']['pitch']
-        self.motor_signals[3] = self.LLC.local_x_torque * C_ROLL * self.control_allocation_matrix['motor_zbr']['roll'] + self.LLC.local_y_torque * C_PITCH * self.control_allocation_matrix['motor_zbr']['pitch']
-        self.motor_signals[4] = self.LLC.local_z_torque * C_YAW * self.control_allocation_matrix['motor_xyfl']['roll'] 
-        self.motor_signals[5] = self.LLC.local_z_torque * C_YAW * self.control_allocation_matrix['motor_xyfr']['roll']
-        self.motor_signals[6] = self.LLC.local_z_torque * C_YAW * self.control_allocation_matrix['motor_xybl']['roll']
-        self.motor_signals[7] = self.LLC.local_z_torque * C_YAW * self.control_allocation_matrix['motor_xybr']['roll']
+        self.motor_signals[0] = self.llc.local_x_torque * C_ROLL * self.control_allocation_matrix['motor_zfl']['roll'] + self.llc.local_y_torque * C_PITCH * self.control_allocation_matrix['motor_zfl']['pitch']
+        self.motor_signals[1] = self.llc.local_x_torque * C_ROLL * self.control_allocation_matrix['motor_zfr']['roll'] + self.llc.local_y_torque * C_PITCH * self.control_allocation_matrix['motor_zfr']['pitch']
+        self.motor_signals[2] = self.llc.local_x_torque * C_ROLL * self.control_allocation_matrix['motor_zbl']['roll'] + self.llc.local_y_torque * C_PITCH * self.control_allocation_matrix['motor_zbl']['pitch']
+        self.motor_signals[3] = self.llc.local_x_torque * C_ROLL * self.control_allocation_matrix['motor_zbr']['roll'] + self.llc.local_y_torque * C_PITCH * self.control_allocation_matrix['motor_zbr']['pitch']
+        self.motor_signals[4] = self.llc.local_z_torque * C_YAW * self.control_allocation_matrix['motor_xyfl']['yaw'] 
+        self.motor_signals[5] = self.llc.local_z_torque * C_YAW * self.control_allocation_matrix['motor_xyfr']['yaw']
+        self.motor_signals[6] = self.llc.local_z_torque * C_YAW * self.control_allocation_matrix['motor_xybl']['yaw']
+        self.motor_signals[7] = self.llc.local_z_torque * C_YAW * self.control_allocation_matrix['motor_xybr']['yaw']
 
         #saturation check
         for x in self.motor_signals:

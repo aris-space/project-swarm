@@ -20,7 +20,7 @@ class PID_w_error:
         
     def update(self, error, dt=None, skip=False):
 
-        if dt ==None:
+        if dt == None:
             dt = (time.time() - self.previous_time)
         self.previous_time = time.time()
 

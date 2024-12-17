@@ -171,15 +171,15 @@ class LLC2:
         self.dt = T_LLC
 
 
-    def update_w_mode1(self):
+    def update_w_mode1(self, dt=1/LLC_FREQ):
         """
         mode 1: set a custom orientation, sub tries to go into that orientation => note: this does does not make the sub counteract buoyancy/gravity and currents
         """
         
         #update angle PIDs
-        self.update_angle_pids()
+        self.update_angle_pids(dt)
         #update angle rate PIDs
-        return self.update_angle_rate_pids()
+        return self.update_angle_rate_pids(dt)
 
 
     def update_w_mode2(self):
@@ -235,6 +235,16 @@ class LLC2:
         return self.global_orientation_estimate_quat
     
 
+    def update_global_orientation_w_quat_sf(self, quat):
+        """
+        update the global orientation with scalar first quaternion => make it first scalar last, then normalise it, then store it in the global orientation estimate quaternion
+        """
+        
+        q = np.array([quat[1], quat[2], quat[3], quat[0]])
+        q = self.normalize_quaternion(q)
+        self.global_orientation_estimate_quat = q
+        return q
+
     def update_global_orientation_w_dead_reckoning(self, yaw_rate, pitch_rate, roll_rate, dt=1/LLC_FREQ):
         """
         update the global orientation estimate quaternion based on the euler rates yaw rate, pitch rate, roll rate
@@ -289,9 +299,9 @@ class LLC2:
         """
         
         local_error = self.calculate_local_angle_error()
-        self.desired_local_roll_rate = self.local_roll_ctrl.update(local_error[0], dt=1/LLC_FREQ)
-        self.desired_local_pitch_rate = self.local_pitch_ctrl.update(local_error[1], dt=1/LLC_FREQ)
-        self.desired_local_yaw_rate = self.local_yaw_ctrl.update(local_error[2], dt=1/LLC_FREQ)
+        self.desired_local_roll_rate = self.local_roll_ctrl.update(local_error[0], dt)
+        self.desired_local_pitch_rate = self.local_pitch_ctrl.update(local_error[1], dt)
+        self.desired_local_yaw_rate = self.local_yaw_ctrl.update(local_error[2], dt)
 
 
     def update_position_pids(self, dt=1/LLC_FREQ):
@@ -310,9 +320,9 @@ class LLC2:
         lets the local anglular rate pid's run to calculate desired local torques.
         """
 
-        self.local_x_torque = self.local_roll_rate_ctrl.update(self.desired_local_roll_rate, self.actual_local_roll_rate, dt=1/LLC_FREQ)
-        self.local_y_torque = self.local_pitch_rate_ctrl.update(self.desired_local_pitch_rate, self.actual_local_pitch_rate, dt=1/LLC_FREQ)
-        self.local_z_torque = self.local_yaw_rate_ctrl.update(self.desired_local_yaw_rate, self.actual_local_yaw_rate, dt=1/LLC_FREQ)
+        self.local_x_torque = self.local_roll_rate_ctrl.update(self.desired_local_roll_rate, self.actual_local_roll_rate, dt)
+        self.local_y_torque = self.local_pitch_rate_ctrl.update(self.desired_local_pitch_rate, self.actual_local_pitch_rate, dt)
+        self.local_z_torque = self.local_yaw_rate_ctrl.update(self.desired_local_yaw_rate, self.actual_local_yaw_rate, dt)
 
         return self.local_x_torque, self.local_y_torque, self.local_z_torque
 
@@ -341,16 +351,18 @@ class LLC2:
     def update_absolute_position(self):
         return [0, 0, 0]
     
-    def update_z_pid(self, dt=1/LLC_FREQ):
+    
+    #def update_z_pid(self, dt=1/LLC_FREQ):
+    
 
-    def update_actual_local_velocities(self, local_x_vel, local_y_vel, local_z_vel):
+    #def update_actual_local_velocities(self, local_x_vel, local_y_vel, local_z_vel):
         """
         stores local velocities given by a SIM or IMU
         """
             
-        self.actual_local_x_vel = local_x_vel
-        self.actual_local_y_vel = local_y_vel
-        self.actual_local_z_vel = local_z_vel
+    #    self.actual_local_x_vel = local_x_vel
+    #    self.actual_local_y_vel = local_y_vel
+    #    self.actual_local_z_vel = local_z_vel
 
 
     def update_r_pids(self, dt=1/LLC_FREQ):

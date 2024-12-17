@@ -25,7 +25,7 @@ class PID:
         
     def update(self, target_value, current_value, dt=None, skip=False):
 
-        if dt ==None:
+        if dt == None:
             dt = (time.time() - self.previous_time) 
         self.previous_time = time.time()
 
