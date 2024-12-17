@@ -60,8 +60,8 @@ def initialize():
 
     return vehicle_model, t_s, h_s, x
 
-def plot(t_s, x):
-    fig, axes = plt.subplots(4,3, figsize=(10,10))
+def plot(t_s, x, waypoints):
+    fig, axes = plt.subplots(4,3, figsize=(8,12))
 
     axes[0,0].plot(t_s,x[6,:])
     axes[0,0].set_title("Forward Velocity")
@@ -94,37 +94,56 @@ def plot(t_s, x):
     axes[1,2].set_ylabel("r [r/s]")
 
     axes[2,0].plot(t_s,x[0,:])
+    if waypoints[0] is not None:
+        axes[2,0].plot(t_s, np.ones(np.size(t_s))*waypoints[0], color='green')
     axes[2,0].set_title("X Position")
     axes[2,0].set_xlabel("Time [s]")
     axes[2,0].set_ylabel("x [m]")
 
     axes[2,1].plot(t_s,x[1,:])
+    if waypoints[1] is not None:
+        axes[2,1].plot(t_s, np.ones(np.size(t_s))*waypoints[1], color='green')
     axes[2,1].set_title("Y Position")
     axes[2,1].set_xlabel("Time [s]")
     axes[2,1].set_ylabel("y [m]")
     
     axes[2,2].plot(t_s,x[2,:])
     axes[2,2].set_title("Z Position")
+    if waypoints[2] is not None:
+        axes[2,2].plot(t_s, np.ones(np.size(t_s))*waypoints[2], color='green')
     axes[2,2].set_xlabel("Time [s]")
     axes[2,2].set_ylabel("z [m]")
 
     axes[3,0].plot(t_s,x[3,:])
     axes[3,0].set_title("Roll Angle")
+    if waypoints[3] is not None:
+        axes[3,0].plot(t_s, np.ones(np.size(t_s))*waypoints[3], color='green')
     axes[3,0].set_xlabel("Time [s]")
     axes[3,0].set_ylabel("phi [rad]")
 
     axes[3,1].plot(t_s,x[4,:])
     axes[3,1].set_title("Pitch Angle")
+    if waypoints[4] is not None:
+        axes[3,1].plot(t_s, np.ones(np.size(t_s))*waypoints[4], color='green')
     axes[3,1].set_xlabel("Time [s]")
     axes[3,1].set_ylabel("roh [rad]")
 
     axes[3,2].plot(t_s,x[5,:])
     axes[3,2].set_title("Yaw Angle")
+    if waypoints[5] is not None:
+        axes[3,2].plot(t_s, np.ones(np.size(t_s))*waypoints[5], color='green')
     axes[3,2].set_xlabel("Time [s]")
     axes[3,2].set_ylabel("psi [rad]")
 
+    #create some space between plots
+    plt.subplots_adjust(hspace=0.7)
+    plt.subplots_adjust(wspace=0.3)
 
-    plt.tight_layout()
+    # create a legend outside of the plots: green = desired, blue = actual
+    plt.legend(['Actual', 'Desired'])
+
+
+    #plt.tight_layout()
     #plt.savefig("simplots/sim4.png")
     plt.show()
 
@@ -159,3 +178,4 @@ def plot(t_s, x):
 
     plt.show()
     """
+

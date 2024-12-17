@@ -1,7 +1,7 @@
 init_params:
-  roll_init: 0.5
-  pitch_init: 0.3
-  yaw_init: 0.8
+  roll_init: -0.5
+  pitch_init: -0.3
+  yaw_init: -0.8
   roll_rate_init: 0.0
   pitch_rate_init: 0.0
   yaw_rate_init: 0.0
@@ -12,7 +12,7 @@ init_params:
   z_vel_init: 0.0
   x_init: 0.0
   x_vel_init: 0.0
-  y_init: 0.0
+  y_init: -10.0
   y_vel_init: 0.0
   x_acc_init: 0.0
   y_acc_init: 0.0
@@ -49,28 +49,28 @@ pid_params:
       ki: 0.0
       kd: 0.0
     vel:
-      kp: 2.0
+      kp: 1.8
       ki: 0.0
       kd: 0.0
 
   y:
     abs:
-      kp: 0.8
+      kp: 0.7
       ki: 0.0
       kd: 0.0
     vel:
-      kp: 2.0
+      kp: 1.6
       ki: 0.0
       kd: 0.0
       
   z:
     abs:
-      kp: 0.6
+      kp: 0.8
       ki: 0.0
       kd: 0.0
 
     vel:
-      kp: 1.0
+      kp: 2.0
       ki: 0.0
       kd: 0.0
 
