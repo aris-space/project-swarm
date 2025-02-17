@@ -37,25 +37,24 @@ C_ROLL = 0.2
 C_PITCH = 0.2
 C_YAW = 0.2
 
-PIN_ZFL = 18
-PIN_ZFR = 19
-PIN_ZBL = 23
-PIN_ZBR = 24
-PIN_XYFL = 99
-PIN_XYFR = 99
-PIN_XYBL = 99
-PIN_XYBR = 99
+PIN_ZFL = 11 #6
+PIN_ZFR = 5 #5
+PIN_ZBL = 10 #8
+PIN_ZBR = 4 #7
+PIN_XYFL = 7 #2
+PIN_XYFR = 6 #1
+PIN_XYBL = 9 #4
+PIN_XYBR = 8 #3
 
 
-
-REV_ZFL = False
-REV_ZFR = False
+REV_ZFL = True
+REV_ZFR = True
 REV_ZBL = False
 REV_ZBR = False
-REV_XYFL = False
-REV_XYFR = False
-REV_XYBL = False
-REV_XYBR = False
+REV_XYFL = True
+REV_XYFR = True
+REV_XYBL = True
+REV_XYBR = True
 
 
 

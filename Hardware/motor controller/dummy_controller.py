@@ -8,9 +8,9 @@ motor3 = CA.motor(8,True)
 motor4 = CA.motor(9,True)
 
 motor5 = CA.motor(5,True)
-motor6 = CA.motor(3,True)
+motor6 = CA.motor(11,True)
 motor7 = CA.motor(4,False)
-motor8 = CA.motor(2,False)
+motor8 = CA.motor(10,False)
 
 
 

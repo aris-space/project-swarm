@@ -1,7 +1,7 @@
 import serial
-import adafruit_bno055
+import Adafruit_BNO055
 uart = serial.Serial("/dev/serial0")
-sensor = adafruit_bno055.BNO055_UART(uart)
+sensor = Adafruit_BNO055.BNO055_UART(uart)
 
 def temperature():
     global last_val  # pylint: disable=global-statement
