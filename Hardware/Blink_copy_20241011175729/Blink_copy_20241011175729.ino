@@ -7,7 +7,7 @@
   it is attached to digital pin 13, on MKR1000 on pin 6. LED_BUILTIN is set to
   the correct LED pin independent of which board is used.
   If you want to know what pin the on-board LED is connected to on your Arduino
-  model, check the Technical Specs of your board at:8
+  model, check the Technical Specs of your board at:81
   https://www.arduino.cc/en/Main/Products
 
   modified 8 May 2014
