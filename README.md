@@ -12,12 +12,12 @@ Workflow for implementing a new feature:
 - Push the branch to the remote repository to ensure changes are tracked.
 
 
-4) Opening a Pull Request:
+3) Opening a Pull Request:
 - Once the feature is working, create a pull request to merge the feature branch into develop.
 - At least two team members must review and approve the pull request.
 - Address any feedback and make necessary improvements.
 
-4) Merging into Develop:
+3) Merging into Develop:
 - After approval, merge the feature branch into develop.
 
 
