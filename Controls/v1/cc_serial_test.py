@@ -37,6 +37,7 @@ if __name__ == "__main__":
             else:
                 print("Unknown line:", line)
                 #print(line)
+                #both can be used
 
         if keyboard.is_pressed('1'):
             ser.write(b'\n')  # Send newline
