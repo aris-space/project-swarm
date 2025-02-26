@@ -1,7 +1,7 @@
 Workflow for implementing a new feature:
 
 1) Setup:
-- Always begin by working from the develop branch.
+- Always begin by going to the develop branch.
 - Create a separate branch for the new feature to keep changes isolated.
 
 2) Developing the Feature:
