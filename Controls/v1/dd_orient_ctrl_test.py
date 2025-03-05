@@ -81,17 +81,19 @@ if __name__ == "__main__":
 
     with open('total_state.log', 'ab') as log:
 
+        #initialize variables
+        orientation = np.zeros(3)
+        quat_w_offsets = np.zeros(4)
+        quat = np.array([])
+        calibration = np.array([])
+
+
         while running:
 
             #planner updates (1000 should be 10s due to 100Hz controller & IMU freq.)
 
             #set up serial connection
 
-            #initialize variables
-            orientation = np.zeros(3)
-            quat_w_offsets = np.zeros(4)
-            quat = np.array([])
-            calibration = np.array([])
 
 
             #Start input thread
@@ -156,7 +158,7 @@ if __name__ == "__main__":
                         #time.sleep(0.01 - (time.time() - last_update))
 
                 if(i%100 == 0):
-                    print(f"Quaternion {quat}")
+                    print(f"Quaternion {quat_w_offsets}")
                     print(f"Euler {orientation}")
                     print(f"Torques {torquex} {torquey} {torquez}")#print(torquex,torquey,torquez, quat_w_offsets, orientation) #zyx euler angles
                     print(f"Motor signals {sca.motor_signals}")
