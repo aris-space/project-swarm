@@ -69,7 +69,6 @@ if __name__ == "__main__":
                 if (m%50 == 0): print("Angular Rates (x,y,z):", angular_rates)
             else:
                 print("Unknown line:", line)
-                #print(line)
 
         if keyboard.is_pressed('1'):
             ser.write(b'\n')  # Send newline
