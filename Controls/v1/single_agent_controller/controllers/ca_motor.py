@@ -44,15 +44,9 @@ class MCA:
         #check if eversed
         if self.reversed:
             #print("is reversed: ", T(-thrust))
-            if thrust>0:
-                pi.set_servo_pulsewidth(self.pin, T(-thrust -5)) # fine tuning for dead zone
-            else:
-                pi.set_servo_pulsewidth(self.pin, T(thrust))
+            pi.set_servo_pulsewidth(self.pin, T(-thrust -5)) # fine tuning for dead zone
         else:
-            if thrust>0:
-                pi.set_servo_pulsewidth(self.pin, T(thrust))
-            else:
-                pi.set_servo_pulsewidth(self.pin, T(-thrust -5))
+            pi.set_servo_pulsewidth(self.pin, T(thrust))
 
 
         return None
