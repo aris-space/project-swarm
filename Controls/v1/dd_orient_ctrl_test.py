@@ -171,23 +171,3 @@ if __name__ == "__main__":
 
                 #log rate rates in a log file
                 np.savetxt(log, np.array([[orientation[0], sca.motor_signals[0]]]), delimiter=',')
-
-            #update the motor thrusts
-
-
-
-            """
-
-
-
-            #listen for offsets turned on/off
-            if keyboard.is_pressed('1'):
-                ser.write(b'\n')  # Send newline
-                ser.write(b'1')   # Send '1'
-                print("Sent: 1")
-            elif keyboard.is_pressed('0'):
-                ser.write(b'\n')  # Send newline
-                ser.write(b'0')   # Send '1'
-                print("Sent: 0")
-
-            """
