@@ -109,7 +109,7 @@ class SCA(LLC2):
                 x = -MOTOR_SATURATION
                 print("Neg. Motor saturation reached")
        
-        print("motor signals: ", self.motor_signals)
+        #print("motor signals: ", self.motor_signals)
 
         self.motor_zfl_control_allocation.set_thrust(self.motor_signals[0])
         self.motor_zfr_control_allocation.set_thrust(self.motor_signals[1])

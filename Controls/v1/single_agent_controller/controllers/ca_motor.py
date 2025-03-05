@@ -38,8 +38,8 @@ class MCA:
         # Note: for start "speed" we assume linear relationship
         # However this function should handle non linear tuning later on
         # sanity check
-        if thrust not in range(-40,41): # warning. 100 is veeryy fast! If safety doesn't trigger. Run!
-            raise ValueError("Speed must be in range [-40,40]")
+        if int(thrust) not in range(-40,41): # warning. 100 is veeryy fast! If safety doesn't trigger. Run!
+            raise ValueError("Speed must be in range [-40,40] and is currently " + str(thrust))
         
         #check if eversed
         if self.reversed:

@@ -33,9 +33,9 @@ DRAG_COEFFICIENT = 0.6
 
 
 #Controll allocation constants
-C_ROLL = 0.2
-C_PITCH = 0.2
-C_YAW = 0.2
+C_ROLL = 1.0
+C_PITCH = 1.0
+C_YAW = 1.0
 
 PIN_ZFL = 11 #6
 PIN_ZFR = 5 #5
@@ -52,9 +52,9 @@ REV_ZFR = True
 REV_ZBL = False
 REV_ZBR = False
 REV_XYFL = True
-REV_XYFR = True
+REV_XYFR = False
 REV_XYBL = True
-REV_XYBR = True
+REV_XYBR = False
 
 
 

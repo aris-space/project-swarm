@@ -14,11 +14,11 @@ if __name__ == "__main__":
     llc = LLC2(CONSTANTS['pid_params'], CONSTANTS['init_params'])
     sca = SCA(llc)
 
-    sca.update_motor_thrusts_manual(10,0,0)
-    time.sleep(0.5)
-    sca.update_motor_thrusts_manual(0,10,0)
-    time.sleep(0.5)
-    sca.update_motor_thrusts_manual(0,0,10)
+    #sca.update_motor_thrusts_manual(20,0,0)
+    #time.sleep(0.5)
+    #sca.update_motor_thrusts_manual(0,20,0)
+    #time.sleep(0.5)
+    sca.update_motor_thrusts_manual(0,0,40)
     time.sleep(0.5)
     
 
