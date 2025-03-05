@@ -15,8 +15,23 @@ import time
 import sys
 import threading
 
+import zmq
 
-running = True
+
+def zmq_interface(socket, llc):
+
+    while True:
+        #  Wait for next request from client
+        message = socket.recv()
+        print(f"Received request: {message}")
+
+        #  Do some 'work'
+        time.sleep(1)
+        llc.update_tar
+
+        #  Send reply back to client
+        socket.send_string("World")
+
 
 
 def send_input():
@@ -75,20 +90,26 @@ if __name__ == "__main__":
 
     #3x2 array for roll, pitch, yaw and their rates from the init_params
     angular_rates = np.zeros(3)
+    #initialize variables
+    orientation = np.zeros(3)
+    quat_w_offsets = np.zeros(4)
+    quat = np.array([])
+    calibration = np.array([])
 
     ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
     ser.flush()
 
+    context = zmq.Context()
+    socket = context.socket(zmq.REP)
+    socket.bind("tcp://*:5555")
+
+
 
     with open('total_state.log', 'ab') as log:
 
-        #initialize variables
-        orientation = np.zeros(3)
-        quat_w_offsets = np.zeros(4)
-        quat = np.array([])
-        calibration = np.array([])
 
         threading.Thread(target=send_input, daemon=True).start()
+        threading.Thread(target=zmq_interface, args=(socket, llc), daemon=True).start()
 
         print("ready")
 
