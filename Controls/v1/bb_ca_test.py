@@ -24,6 +24,8 @@ if __name__ == "__main__":
     #wait 3 sec
     time.sleep(3)
 
+    #blablabla
+
     sca.update_motor_thrusts_zero()
 
 

@@ -68,9 +68,7 @@ if __name__ == "__main__":
                 angular_rates = np.array([float(x) for x in values.split(",") if x.strip() != ""])
                 if (m%50 == 0): print("Angular Rates (x,y,z):", angular_rates)
             else:
-                print(line)
-                pass
-
+                print("Unknown line:", line)
 
         if keyboard.is_pressed('1'):
             ser.write(b'\n')  # Send newline
