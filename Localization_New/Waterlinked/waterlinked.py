@@ -17,12 +17,8 @@ class WaterLinked:
         self.poll_interval = poll_interval
         self.test_mode = test_mode
         self.latest_data = None  # Holds the most recent data (a dict)
-        self.running = False
-        self.thread = None
-
-    def start(self):
-        """Starts the background thread for data acquisition."""
         self.running = True
+        # Create and automatically start the background thread
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
@@ -70,3 +66,8 @@ class WaterLinked:
         if self.thread:
             self.thread.join()
 
+
+# Create a single instance of WaterLinked for use in the communications module.
+# The communications code only needs to call waterlinked_instance.get_latest_position_string().
+waterlinked_instance = WaterLinked(base_url="http://192.168.7.1", poll_interval=1.0, test_mode=True)
+print(waterlinked_instance.get_latest_position())
