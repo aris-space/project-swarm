@@ -1,35 +1,42 @@
-import argparse
-import csv
-import datetime
 import queue
 import requests
 import threading
 import time
 
-class DataProducer(threading.Thread):
-    def __init__(self, base_url, poll_interval, test_mode, data_queue):
-        super().__init__(daemon=True)
+class WaterLinked:
+    def __init__(self, base_url, poll_interval=1.0, test_mode=True):
+        """
+        Initializes the WaterLinked instance.
+
+        Parameters:
+        - base_url: URL of the WaterLinked system ("http://192.168.7.1")
+        - poll_interval: How often (in seconds) to fetch new data.
+        - test_mode: If True, dummy data is returned instead of making HTTP calls.
+        """
         self.base_url = base_url
         self.poll_interval = poll_interval
         self.test_mode = test_mode
-        self.data_queue = data_queue
+        self.latest_data = None  # Holds the most recent data (a dict)
         self.running = True
+        # Create and automatically start the background thread
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
 
-    def run(self):
+    def _run(self):
+        """Background thread function that continuously fetches and stores data."""
         while self.running:
-            data = self.fetch_data()
-            if data is not None:
-                try:
-                    self.data_queue.put(data, timeout=1)
-                    #print(f"Data buffered: {data}")
-                except queue.Full:
-                    print("Buffer full, skipping data point.")
+            data = self._fetch_data()
+            if data:
+                self.latest_data = data
             time.sleep(self.poll_interval)
 
-    def fetch_data(self):
+    def _fetch_data(self):
+        """
+        Fetches the latest acoustic position data from the WaterLinked API.
+        In test mode, it returns dummy data.
+        """
         endpoint = f"{self.base_url}/api/v1/position/acoustic/filtered"
         if self.test_mode:
-            # Return default values when in test mode
             return {"x": 1.23, "y": 4.56, "z": 7.89}
         try:
             response = requests.get(endpoint)
@@ -43,81 +50,24 @@ class DataProducer(threading.Thread):
 
         return response.json()
 
-    def stop(self):
-        self.running = False
-
-
-class DataConsumer(threading.Thread):
-    def __init__(self, csv_filename, data_queue):
-        super().__init__(daemon=True)
-        self.csv_filename = csv_filename
-        self.data_queue = data_queue
-        self.running = True
-
-    def run(self):
-        while self.running:
-            try:
-                data = self.data_queue.get(timeout=1)
-                self.log_to_csv(data)
-                # Print the acoustic x, y, and z positions
-                print(f"Acoustic Position -> X: {data.get('x')}, Y: {data.get('y')}, Z: {data.get('z')}")
-                #print(f"Data processed: {data}")
-                self.data_queue.task_done()
-            except queue.Empty:
-                continue
-
-    def log_to_csv(self, data):
-        fieldnames = ['timestamp', 'x', 'y', 'z']
-        with open(self.csv_filename, 'a', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            csvfile.seek(0, 2)  # Move to the end of the file
-            if csvfile.tell() == 0:
-                writer.writeheader()
-            writer.writerow({
-                'timestamp': datetime.datetime.now().isoformat(),
-                'x': data.get('x'),
-                'y': data.get('y'),
-                'z': data.get('z')
-            })
+    def get_latest_position(self):
+        """
+        Returns the latest position as a formatted string 'x, y, z'.
+        If no data is available yet, returns an empty string.
+        """
+        if self.latest_data:
+            return f"{self.latest_data.get('x')}, {self.latest_data.get('y')}, {self.latest_data.get('z')}"
+        else:
+            return ""
 
     def stop(self):
+        """Stops the background thread gracefully."""
         self.running = False
+        if self.thread:
+            self.thread.join()
 
 
-def main():
-    parser = argparse.ArgumentParser(description="WaterLinked Data Buffer with Terminal Output")
-    parser.add_argument("-u", "--url", type=str, default="https://demo.waterlinked.com",
-                        help="Base URL to use")
-    parser.add_argument("-t", "--test", action="store_true",
-                        help="Enable test mode with default values")
-    args = parser.parse_args()
-
-    base_url = args.url
-    test_mode = args.test
-    csv_filename = "positions.csv"
-
-    # Create a FIFO queue for buffering data
-    data_queue = queue.Queue(maxsize=100)
-
-    # Instantiate producer and consumer threads
-    producer = DataProducer(base_url, poll_interval=1.0, test_mode=test_mode, data_queue=data_queue)
-    consumer = DataConsumer(csv_filename, data_queue=data_queue)
-
-    # Start the threads
-    producer.start()
-    consumer.start()
-
-    # Keep the main thread alive until interrupted
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("Shutting down.")
-        producer.stop()
-        consumer.stop()
-        producer.join()
-        consumer.join()
-
-
-if __name__ == "__main__":
-    main()
+# Create a single instance of WaterLinked for use in the communications module.
+# The communications code only needs to call waterlinked_instance.get_latest_position_string().
+waterlinked_instance = WaterLinked(base_url="http://192.168.7.1", poll_interval=1.0, test_mode=True)
+print(waterlinked_instance.get_latest_position())
