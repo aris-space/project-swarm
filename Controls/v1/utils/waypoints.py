@@ -1,6 +1,6 @@
 waypoints = [
     #z at 5, rest 0
-    {'x': 10.0, 'y': 5.0, 'z': 15.0, 'roll': 0.2, 'pitch': 0.3, 'yaw': 0.4, 'timestamp': 0},
+    {'x': 0.0, 'y': 0.0, 'z': 0.0, 'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0, 'timestamp': 0},
 
 
 
