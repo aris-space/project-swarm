@@ -51,7 +51,8 @@ class LoRa_Transceiver:
 
     def transmit_LoRa(self):
         self.LoRa.purge()  # Clear buffer
-        message = self.process_coordinates(self.string_to_transmit)
+        #message = self.process_coordinates(self.string_to_transmit)
+        message = self.string_to_transmit
         transmit_message = (message + self.delimiter).encode('utf-8')
 
         transmit_start_time = time.time()
@@ -59,12 +60,15 @@ class LoRa_Transceiver:
             self.LoRa.beginPacket()
             self.LoRa.write(list(transmit_message), len(transmit_message))
             self.LoRa.endPacket()
+            self.LoRa.wait()
+            #print("Transmit time: {0:0.2f} ms | Data rate: {1:0.2f} byte/s".format(self.LoRa.transmitTime(), self.LoRa.dataRate()))
 
         print(f"{self.device_id} finished transmitting: {message}.")
 
     def receive_LoRa(self):
         self.LoRa.purge()  # Clear previous buffer
         start_time = time.time()
+        self.received_message = ""
 
         while time.time() - start_time < self.slot_duration:
             if not self.LoRa.request(self.request_slot):
@@ -75,7 +79,6 @@ class LoRa_Transceiver:
             status = self.LoRa.status()
 
             if status == self.LoRa.STATUS_RX_DONE:
-                self.received_message = ""
                 while self.LoRa.available() > 1:
                     self.received_message += chr(self.LoRa.read())
 
@@ -84,10 +87,13 @@ class LoRa_Transceiver:
 
             elif status == self.LoRa.STATUS_RX_TIMEOUT:
                 print("Timeout: No packet received.")
+                return "No data"
             elif status == self.LoRa.STATUS_CRC_ERR:
                 print("CRC Error: Corrupted packet.")
+                return "Corrupted data"
             elif status == self.LoRa.STATUS_HEADER_ERR:
                 print("Header Error: Invalid packet structure.")
+                return "invalid packet struct"
 
         return None 
 

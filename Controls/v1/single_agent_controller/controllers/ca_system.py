@@ -9,8 +9,8 @@ class SCA(LLC2):
 
         self.llc = LLC2
         
-        self.motor_zfl_control_allocation = MCA(pin_def= PIN_ZFL, reversed_def=REV_ZFL)
-        self.motor_zfr_control_allocation = MCA(pin_def= PIN_ZFR, reversed_def=REV_ZFR)
+        self.motor_zfl_control_allocation = MCA(pin_def= PIN_ZFL, reversed_def=REV_ZFL) 
+        self.motor_zfr_control_allocation = MCA(pin_def= PIN_ZFR, reversed_def=REV_ZFR) 
         self.motor_zbl_control_allocation = MCA(pin_def= PIN_ZBL, reversed_def=REV_ZBL)
         self.motor_zbr_control_allocation = MCA(pin_def= PIN_ZBR,  reversed_def=REV_ZBR)
         self.motor_xyfl_control_allocation = MCA(pin_def= PIN_XYFL, reversed_def=REV_XYFL)
@@ -22,32 +22,33 @@ class SCA(LLC2):
 
         self.control_allocation_matrix = {
             #motors         pos direction   
-            'motor_zfl':  {   'roll': -1 ,    'pitch': 1  ,   'yaw': 0},
-            'motor_zfr':  {   'roll': 1  ,    'pitch': 1  ,   'yaw': 0},
-            'motor_zbl':  {   'roll': -1 ,    'pitch': -1 ,   'yaw': 0},
-            'motor_zbr':  {   'roll': 1  ,    'pitch': -1 ,   'yaw': 0},
-            'motor_xyfl': {   'roll': 0  ,    'pitch': 0  ,   'yaw': 1},
+            'motor_zfl':  {   'roll': 1 ,    'pitch': -1  ,   'yaw': 0},
+            'motor_zfr':  {   'roll': -1  ,    'pitch': -1  ,   'yaw': 0},
+            'motor_zbl':  {   'roll': 1 ,    'pitch': 1 ,   'yaw': 0},
+            'motor_zbr':  {   'roll': -1  ,    'pitch': 1 ,   'yaw': 0},
+            'motor_xyfl': {   'roll': 0  ,    'pitch': 0  ,   'yaw': -1},
             'motor_xyfr': {   'roll': 0  ,    'pitch': 0  ,   'yaw': 1},
-            'motor_xybl': {   'roll': 0  ,    'pitch': 0  ,   'yaw': 1},
+            'motor_xybl': {   'roll': 0  ,    'pitch': 0  ,   'yaw': -1},
             'motor_xybr': {   'roll': 0  ,    'pitch': 0  ,   'yaw': 1}
             
 
         }
 
         """
-            sub
+            sub                x
 
-                            front
+                                front
 
-                    xyfl                xyfr
-            left            zfl zfr             right
-                            zbl zbr
-                    xybl                xybr
+                    xyfl(5)                xyfr(6)
+        y   left            zfl(1) zfr(2)             right               
+                            zbl(3) zbr(4)
+                    xybl(7)                xybr(8)
                     
-                            back
+                                back
             
             
-            
+        z follows from right hand rule with x & y  
+
         """
 
 
@@ -55,6 +56,11 @@ class SCA(LLC2):
 
         self.motor_signals = np.zeros(8)
 
+
+    def update_single_motor_thrust(self, motor_name):
+        attribute_name = f"motor_{motor_name}_control_allocation"
+        motor_control = getattr(self, attribute_name, None)
+        motor_control.set_thrust(30)
 
     def update_motor_thrusts(self):
 
@@ -95,10 +101,10 @@ class SCA(LLC2):
         self.motor_signals[1] = local_x_torque_man * C_ROLL * self.control_allocation_matrix['motor_zfr']['roll'] + local_y_torque_man * C_PITCH * self.control_allocation_matrix['motor_zfr']['pitch']
         self.motor_signals[2] = local_x_torque_man * C_ROLL * self.control_allocation_matrix['motor_zbl']['roll'] + local_y_torque_man * C_PITCH * self.control_allocation_matrix['motor_zbl']['pitch']
         self.motor_signals[3] = local_x_torque_man * C_ROLL * self.control_allocation_matrix['motor_zbr']['roll'] + local_y_torque_man * C_PITCH * self.control_allocation_matrix['motor_zbr']['pitch']
-        self.motor_signals[4] = local_z_torque_man * C_YAW * self.control_allocation_matrix['motor_xyfl']['roll'] 
-        self.motor_signals[5] = local_z_torque_man * C_YAW * self.control_allocation_matrix['motor_xyfr']['roll']
-        self.motor_signals[6] = local_z_torque_man * C_YAW * self.control_allocation_matrix['motor_xybl']['roll']
-        self.motor_signals[7] = local_z_torque_man * C_YAW * self.control_allocation_matrix['motor_xybr']['roll']
+        self.motor_signals[4] = local_z_torque_man * C_YAW * self.control_allocation_matrix['motor_xyfl']['yaw'] 
+        self.motor_signals[5] = local_z_torque_man * C_YAW * self.control_allocation_matrix['motor_xyfr']['yaw']
+        self.motor_signals[6] = local_z_torque_man * C_YAW * self.control_allocation_matrix['motor_xybl']['yaw']
+        self.motor_signals[7] = local_z_torque_man * C_YAW * self.control_allocation_matrix['motor_xybr']['yaw']
 
         #saturation check
         for x in self.motor_signals:
@@ -109,7 +115,7 @@ class SCA(LLC2):
                 x = -MOTOR_SATURATION
                 print("Neg. Motor saturation reached")
        
-        print("motor signals: ", self.motor_signals)
+        #print("motor signals: ", self.motor_signals)
 
         self.motor_zfl_control_allocation.set_thrust(self.motor_signals[0])
         self.motor_zfr_control_allocation.set_thrust(self.motor_signals[1])
@@ -129,6 +135,17 @@ class SCA(LLC2):
         self.motor_xyfr_control_allocation.set_thrust(0)
         self.motor_xybl_control_allocation.set_thrust(0)
         self.motor_xybr_control_allocation.set_thrust(0)
+
+    def update_motor_thrusts_nonzero(self, thrust):
+        self.motor_zfl_control_allocation.set_thrust(thrust)
+        self.motor_zfr_control_allocation.set_thrust(thrust)
+        self.motor_zbl_control_allocation.set_thrust(thrust)
+        self.motor_zbr_control_allocation.set_thrust(thrust)
+        self.motor_xyfl_control_allocation.set_thrust(thrust)
+        self.motor_xyfr_control_allocation.set_thrust(thrust)
+        self.motor_xybl_control_allocation.set_thrust(thrust)
+        self.motor_xybr_control_allocation.set_thrust(thrust)
+
 
 
 
