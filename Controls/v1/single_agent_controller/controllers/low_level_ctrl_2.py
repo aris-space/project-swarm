@@ -222,6 +222,12 @@ class LLC2:
         thrustx, thrusty, thrustz = self.update_veloctiy_pids()
 
         return thrustx, thrusty, thrustz, torquex, torquey, torquez
+    
+    def update_w_mode4(angular_rate):
+        #just update a single rate PID for PID tuning
+
+        return self.update_actual_local_rates(angular_rate[0], angular_rate[1], angular_rate[2])
+
 
 
     def update_global_orientation_w_state(self, z,y,x, dt=1/LLC_FREQ):
