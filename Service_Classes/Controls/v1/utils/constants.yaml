@@ -1,0 +1,117 @@
+init_params:
+  roll_init: 0.0
+  pitch_init: 0.0
+  yaw_init: 0.0
+  roll_rate_init: 0.0
+  pitch_rate_init: 0.0
+  yaw_rate_init: 0.0
+  roll_acc_init: 0.0
+  pitch_acc_init: 0.0
+  yaw_acc_init: 0.0
+  z_init: 0.0
+  z_vel_init: 0.0
+  x_init: 0.0
+  x_vel_init: 0.0
+  y_init: 0.0
+  y_vel_init: 0.0
+  x_acc_init: 0.0
+  y_acc_init: 0.0
+  z_acc_init: 0.0
+
+
+  #YXZ
+
+
+vehicle_params:
+  mass: 1.0
+  moment_of_inertia:
+    x: 0.1
+    y: 0.1
+    z: 0.1
+  dimensions:
+    l: 0.1
+    w: 0.1
+    h: 0.1
+  drag_coefficients: 0.1
+
+
+environment_params:
+  fluid_density: 1.225
+  gravity: 9.81
+
+
+
+
+pid_params:
+  x:
+    abs:
+      kp: 0.8
+      ki: 0.0
+      kd: 0.0
+    vel:
+      kp: 1.8
+      ki: 0.0
+      kd: 0.0
+
+  y:
+    abs:
+      kp: 0.7
+      ki: 0.0
+      kd: 0.0
+    vel:
+      kp: 1.6
+      ki: 0.0
+      kd: 0.0
+      
+  z:
+    abs:
+      kp: 0.8
+      ki: 0.0
+      kd: 0.0
+
+    vel:
+      kp: 2.0
+      ki: 0.0
+      kd: 0.0
+
+  r:
+    abs:
+      kp: 1.0
+      ki: 0.0
+      kd: 0.0
+    vel:
+      kp: 10.0
+      ki: 0.0
+      kd: 0.0
+
+
+  roll:
+    abs:
+      kp: 3500.0 #0.4
+      ki: 0.0 #0.01
+      kd: 0.0  #0.003
+    
+    rate:
+      kp: 0.01 #0.8
+      ki: 0.0
+      kd: 0.0 #0.01
+
+  pitch:
+    abs:
+      kp: 3500.0 #0.4
+      ki: 0.00 #0.01
+      kd: 0.00 #0.003
+    rate:
+      kp: 0.01 #0.8
+      ki: 0.0
+      kd: 0.00 #0.01
+
+  yaw:
+    abs:
+      kp: 3500.0 #0.4
+      ki: 0.00 #0.01
+      kd: 0.000 #0.003
+    rate:
+      kp: 0.01 #0.8
+      ki: 0.0
+      kd: 0.0 #0.01
