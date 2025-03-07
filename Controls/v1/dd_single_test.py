@@ -27,7 +27,7 @@ def zmq_interface(socket, llc):
 
         #  Do some 'work'
         time.sleep(1)
-        llc.update_tar
+        #llc.update_tar
 
         #  Send reply back to client
         socket.send_string("World")
@@ -47,34 +47,35 @@ def send_input():
             running = not running
             print("Motors off: 9")
 
-def receive_input():
-    while True:
-        if ser.in_waiting > 0:
-            line = ser.readline().decode('utf-8', errors='replace').strip()
-            if "Orientation" in line:
-                values = line.split(":")[-1].strip()
-                orientation = np.array([float(x) for x in values.split(",")])
-                #print("Orientation:", orientation)
-            elif "Quaternion rel. to offsets" in line:
-                values = line.split(":")[-1].strip()
-                quat_w_offsets = np.array([float(x) for x in values.split(",")])
-                #print("Quaternion relative to offsets:", quat_w_offsets)
-            elif "Quaternion:" in line and "rel. to offsets" not in line:
-                values = line.split(":")[-1].strip()
-                quat = np.array([float(x) for x in values.split(",")])
-                #print("Quaternion:", quat)
-            elif "Angular Rates (x,y,z):" in line:
-                values = line.split(":")[-1].strip()
-                #print(values)
-                #print([str(x) for x in values.split(",")])
-                angular_rates = np.array([float(x) for x in values.split(",") if x.strip() != ""])
-                #print("Angular Rates (x,y,z):", angular_rates)
-            elif "Calibration" in line:
-                values = line.split(":")[-1].strip()
-                calibration = np.array([int(x) for x in values.split(",")[-1].strip()])
-                #print("Calibration:", calibration) 
-            else:
-                pass
+def receive_input(orientation, quat_w_offsets, quat, angular_rates, calibration):
+    if ser.in_waiting > 0:
+        line = ser.readline().decode('utf-8', errors='replace').strip()
+        if "Orientation" in line:
+            values = line.split(":")[-1].strip()
+            orientation = np.array([float(x) for x in values.split(",")])
+            #print("Orientation:", orientation)
+        elif "Quaternion rel. to offsets" in line:
+            values = line.split(":")[-1].strip()
+            quat_w_offsets = np.array([float(x) for x in values.split(",")])
+            #print("Quaternion relative to offsets:", quat_w_offsets)
+        elif "Quaternion:" in line and "rel. to offsets" not in line:
+            values = line.split(":")[-1].strip()
+            quat = np.array([float(x) for x in values.split(",")])
+            #print("Quaternion:", quat)
+        elif "Angular Rates (x,y,z):" in line:
+            values = line.split(":")[-1].strip()
+            #print(values)
+            #print([str(x) for x in values.split(",")])
+            angular_rates = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            #print("Angular Rates (x,y,z):", angular_rates)
+        elif "Calibration" in line:
+            values = line.split(":")[-1].strip()
+            calibration = np.array([int(x) for x in values.split(",")[-1].strip()])
+            #print("Calibration:", calibration) 
+        else:
+            pass
+    
+    return orientation, quat_w_offsets, quat, angular_rates, calibration
 
 
 
@@ -101,7 +102,7 @@ if __name__ == "__main__":
 
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind("tcp://*:5555")
+    socket.bind("tcp://*:6000")
 
 
 
@@ -113,9 +114,14 @@ if __name__ == "__main__":
 
         print("ready")
 
+        running = True
+
+        i=0
+
         
         while True:
 
+            i+=1
 
 
             if running:
@@ -128,7 +134,7 @@ if __name__ == "__main__":
 
 
                 for j in range(6):
-                    receive_input()
+                    orientation, quat_w_offsets, quat, angular_rates, calibration = receive_input(orientation, quat_w_offsets, quat, angular_rates, calibration)
 
                     #if True:#(angular_rates.size == 3 and quat_w_offsets.size == 4 and orientation.size == 3):
                     
@@ -138,6 +144,13 @@ if __name__ == "__main__":
 
 
                 llc.update_global_orientation_w_quat_sf(quat_w_offsets)
+
+                if(i%100 == 0):
+                    print(f"Quaternion {quat_w_offsets}")
+                    print(f"Euler {orientation}")
+                    print(f"Torques {torquex} {torquey} {torquez}")#print(torquex,torquey,torquez, quat_w_offsets, orientation) #zyx euler angles
+                    print(f"Motor signals {sca.motor_signals}")
+                    print(f"time {int(time.time()-last_update)}")
   
 
                 torquex, torquey, torquez = llc.update_w_mode1(time.time() - last_update)
