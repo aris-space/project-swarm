@@ -486,7 +486,7 @@ class LLC2:
         meaning that pitch is the rotation around the rotated y-axis => y' and roll is the rotation around the rotated x-axis => x''
         """
 
-        return R.from_euler('zyx', [yaw, pitch, roll], degrees=False).as_quat()
+        return R.from_euler('zyx', [yaw, pitch, roll], degrees=True).as_quat()
     
     def quaternion_multiply(self, q1, q2):
         """
