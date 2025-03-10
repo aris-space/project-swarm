@@ -21,5 +21,5 @@ while True:
     time.sleep(1)
 
     #  Send reply back to client
-    socket.send(np.array([1,2,3]))
+    socket.send(b"World")
 

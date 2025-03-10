@@ -19,7 +19,7 @@ import threading
 running = True
 
 
-def send_input():
+def send_imu_input():
     while True:
         key = sys.stdin.read(1)  # Read one character at a time
         if key == '1':
@@ -28,11 +28,8 @@ def send_input():
         elif key == '0':
             ser.write(b'\n0')
             print("Sent: 0")
-        elif key == '9':
-            running = not running
-            print("Motors off: 9")
 
-def receive_input():
+def receive_imu_input(orientation, quat_w_offsets, quat, calibration, angular_rates):
     while True:
         if ser.in_waiting > 0:
             line = ser.readline().decode('utf-8', errors='replace').strip()
@@ -60,6 +57,11 @@ def receive_input():
                 #print("Calibration:", calibration) 
             else:
                 pass
+
+
+
+#def send_live_data(orientation, quat_w_offsets, quat, calibration, angular_rates):
+    
 
 
 
@@ -97,7 +99,9 @@ if __name__ == "__main__":
 
 
             #Start input thread
-            threading.Thread(target=send_input, daemon=True).start()
+            threading.Thread(target=send_imu_input, daemon=True).start()
+            threading.Thread(target=receive_imu_input, args=(orientation, quat_w_offsets, quat, calibration, angular_rates,), daemon=True).start()
+
 
             print("type 1 now")
             sca.update_motor_thrusts_manual(0, 0, 0)
@@ -107,36 +111,6 @@ if __name__ == "__main__":
             for i in range(1,10000):
 
                 for k in range(5):
-
-                    for j in range(6):
-                    
-                        if ser.in_waiting > 0:
-                            line = ser.readline().decode('utf-8', errors='replace').strip()
-                            if "Orientation" in line:
-                                values = line.split(":")[-1].strip()
-                                orientation = np.array([float(x) for x in values.split(",")])
-                                #print("Orientation:", orientation)
-                            elif "Quaternion rel. to offsets" in line:
-                                values = line.split(":")[-1].strip()
-                                quat_w_offsets = np.array([float(x) for x in values.split(",")])
-                                #print("Quaternion relative to offsets:", quat_w_offsets)
-                            elif "Quaternion:" in line and "rel. to offsets" not in line:
-                                values = line.split(":")[-1].strip()
-                                quat = np.array([float(x) for x in values.split(",")])
-                                #print("Quaternion:", quat)
-                            elif "Angular Rates (x,y,z):" in line:
-                                values = line.split(":")[-1].strip()
-                                #print(values)
-                                #print([str(x) for x in values.split(",")])
-                                angular_rates = np.array([float(x) for x in values.split(",") if x.strip() != ""])
-                                #print("Angular Rates (x,y,z):", angular_rates)
-                            elif "Calibration" in line:
-                                values = line.split(":")[-1].strip()
-                                calibration = np.array([int(x) for x in values.split(",")[-1].strip()])
-                                #print("Calibration:", calibration) 
-                            else:
-                                pass
-                                #print(line)
 
                         
 
