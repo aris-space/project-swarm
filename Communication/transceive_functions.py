@@ -46,10 +46,10 @@ class LoRa_Transceiver:
     def custom_pack(self, data):
         """
         Packs data containing:
-          - Single numbers (int/float) as marker 0x01,
-          - Lists of numbers as marker 0x02,
-          - Lists of state values (integers 0,1,2) as marker 0x03.
-          
+        - Single numbers (int/float) as marker 0x01,
+        - Lists of numbers as marker 0x02,
+        - Lists of state values (integers 0, 1, 2) as marker 0x03.
+        
         Numbers are scaled by 100 and stored as 2-byte unsigned shorts.
         """
         result = bytearray()
@@ -64,13 +64,13 @@ class LoRa_Transceiver:
                 if all(isinstance(x, (int, float)) for x in item):
                     # If every value is one of {0, 1, 2}, pack as a state list.
                     if all(x in [0, 1, 2] for x in item):
-                        result.append(0x03)      # Marker for state list
-                        result.append(len(item)) # 1-byte length of sublist
+                        result.append(0x03)          # Marker for state list
+                        result.append(len(item))     # 1-byte length of sublist
                         for s in item:
                             result.append(int(s))
                     else:
-                        result.append(0x02)      # Marker for list of numbers
-                        result.append(len(item)) # 1-byte length of sublist
+                        result.append(0x02)          # Marker for list of numbers
+                        result.append(len(item))     # 1-byte length of sublist
                         for num in item:
                             scaled = int(float(num) * 100)
                             result.extend(struct.pack(">H", scaled))
@@ -83,42 +83,56 @@ class LoRa_Transceiver:
     def custom_unpack(self, packed):
         """
         Unpacks data produced by custom_pack().
-        Single numbers are returned as floats (scaled back by dividing by 100).
-        Lists of numbers (marker 0x02) are unpacked similarly.
-        Lists of state values (marker 0x03) are returned as lists of ints.
+        
+        In the state list branch (marker 0x03), if there are fewer state bytes than
+        expected, this version pads the state list with 2s instead of raising an error.
         """
         result = []
         idx = 0
         while idx < len(packed):
             marker = packed[idx]
             idx += 1
+
             if marker == 0x01:
-                # Single number: next 2 bytes
+                if idx + 2 > len(packed):
+                    raise ValueError("Not enough data to unpack a number")
                 (scaled,) = struct.unpack(">H", packed[idx:idx+2])
                 result.append(scaled / 100.0)
                 idx += 2
+
             elif marker == 0x02:
-                # List of numbers: next byte gives the length
+                if idx + 1 > len(packed):
+                    raise ValueError("Not enough data to unpack list length")
                 length = packed[idx]
                 idx += 1
                 sublist = []
                 for _ in range(length):
+                    if idx + 2 > len(packed):
+                        raise ValueError("Not enough data to unpack list element")
                     (scaled,) = struct.unpack(">H", packed[idx:idx+2])
                     sublist.append(scaled / 100.0)
                     idx += 2
                 result.append(sublist)
+
             elif marker == 0x03:
-                # List of state values: next byte gives the length
+                if idx + 1 > len(packed):
+                    raise ValueError("Not enough data to unpack state list length")
                 length = packed[idx]
                 idx += 1
-                state_list = []
-                for _ in range(length):
-                    state_list.append(packed[idx])
-                    idx += 1
+                available = len(packed) - idx
+                if available < length:
+                    # If there are fewer state bytes than expected, take what's available
+                    # and pad the rest with 2's.
+                    state_list = list(packed[idx:]) + [2] * (length - available)
+                    idx = len(packed)
+                else:
+                    state_list = list(packed[idx:idx+length])
+                    idx += length
                 result.append(state_list)
             else:
                 raise ValueError("Unknown marker encountered during unpacking")
         return result
+
 
     def transmit_LoRa(self, message):
         self.LoRa.purge()  # Clear buffer
@@ -127,8 +141,8 @@ class LoRa_Transceiver:
         self.LoRa.endPacket()
         self.LoRa.wait()
 
-        print(f"{self.device_id} finished transmitting: {message}")
-        print("Transmit time: {0:0.2f} ms | Data rate: {1:0.2f} byte/s".format(self.LoRa.transmitTime(), self.LoRa.dataRate()))
+        #print(f"{self.device_id} finished transmitting: {message}")
+        #print("Transmit time: {0:0.2f} ms | Data rate: {1:0.2f} byte/s".format(self.LoRa.transmitTime(), self.LoRa.dataRate()))
 
     def receive_LoRa(self):
         self.LoRa.purge()  # Clear previous buffer
@@ -144,8 +158,9 @@ class LoRa_Transceiver:
             received_bytes = b""
             while self.LoRa.available() > 1:
                 received_bytes += self.LoRa.read().to_bytes(1, 'big')
+            #print(received_bytes)
             decoded_data = self.custom_unpack(received_bytes)
-            print(f"Received message: {decoded_data}")
+            #print(f"Received message: {decoded_data}")
             return decoded_data
 
         elif status == self.LoRa.STATUS_RX_TIMEOUT:
@@ -160,90 +175,84 @@ class LoRa_Transceiver:
 
         return None 
 
+
     def main_locom(self, message):
         """
         Function to handle the main communication loop of the LoRa transceiver.
         Uses self.device_id and self.slot_duration.
         """
         # Use self.device_id for identification
-        is_transmitting = (self.device_id == 1)
-        matching_message = None
+        #is_transmitting = (self.device_id == 1)
+        #matching_message = None
 
-        print(f"{self.device_id} initialized. Starting communication protocol...")
+        print(f"Device {self.device_id} initialized. Starting communication protocol...")
 
-        # TRANSMITTING
-        while True: 
-            if is_transmitting:
-
-                if self.device_id == 1:
-                    print(f"{self.device_id} transmitting: {message}")
-                    transmit_message = self.custom_pack(message)
-                    transmit_start_time = time.time()
-                    while time.time() - transmit_start_time < self.slot_duration:
-                        self.transmit_LoRa(transmit_message)
-                    is_transmitting = False  # Moved outside the while loop
-
-                elif self.device_id == 2:
-                    # For device 2, ensure matching_message is set before transmitting
-                    print(f"{self.device_id} is transmitting: {matching_message}")
-                    if matching_message is None:
-                        print("No matching message to transmit for device 2.")
-                        return None
-                    transmit_message = self.custom_pack(matching_message)
-                    transmit_start_time = time.time()
-                    while time.time() - transmit_start_time < self.slot_duration:
-                        self.transmit_LoRa(transmit_message)
-                    is_transmitting = False  # Moved outside the while loop
-
-            # RECEIVING
+        if self.device_id == 1:
+            # Device 1: Transmit first.
+            print(f"Device {self.device_id} transmitting message: {message}")
+            transmit_message = self.custom_pack(message)
+            transmit_start_time = time.time()
+            while time.time() - transmit_start_time < self.slot_duration:
+                self.transmit_LoRa(transmit_message)
+            
+            # Then switch to receiving mode.
+            print(f"Device {self.device_id} switching to receiving mode for {self.slot_duration} seconds...")
+            start_time = time.time()
+            received_message = None
+            while time.time() - start_time < self.slot_duration:
+                msg = self.receive_LoRa()
+                if msg is not None:
+                    # Store the received message and exit.
+                    received_message = msg
+                    break
+            
+            if received_message is not None:
+                print(f"Device {self.device_id} received: {received_message}")
+                return received_message
             else:
-                if self.device_id == 2:
-                    print(f"{self.device_id} receiving for {self.slot_duration} seconds...")
-                    start_time = time.time()
-                    while time.time() - start_time < self.slot_duration:
-                        msg = self.receive_LoRa()
-                        if msg is not None:
-                            # A real message was received; break out early.
-                            if msg == "Acknowledged":
-                                return "Achnowledged" and False
-                            if msg == "Non-Matching":
-                                return "Non-Matching" and False
-                            is_transmitting = True
-                            matching_message = msg
-                            return msg
-                    matching_message = [99]
-                    return "No data"
+                print("Device 1 did not receive any message.")
+                return "No data"
 
-                elif self.device_id == 1:
-                    print(f"{self.device_id} receiving for {self.slot_duration} seconds...")
-                    start_time = time.time()
-                    while time.time() - start_time < self.slot_duration:
-                        msg = self.receive_LoRa()
-                        if msg is not None:
-                            # A real message was received; break out early.
-                            if msg == message: 
-                                return "Acknowledged" and False
-                            else: 
-                                return "Non-matching" and False
-                            
-                    is_transmitting = True
-                    return "No data"
+        elif self.device_id == 2:
+            # Device 2: Receive first.
+            print(f"Device {self.device_id} waiting to receive a message for {self.slot_duration} seconds...")
+            start_time = time.time()
+            received_message = None
+            while time.time() - start_time < self.slot_duration:
+                msg = self.receive_LoRa()
+                if msg is not None:
+                    received_message = msg
+                    break
+            
+            if received_message is not None:
+                #print(f"Device {self.device_id} received: {received_message}")
+                # Then transmit the received message.
+                #print(f"Device {self.device_id} transmitting received message: {received_message}")
+                transmit_message = self.custom_pack(received_message)
+                transmit_start_time = time.time()
+                while time.time() - transmit_start_time < self.slot_duration:
+                    self.transmit_LoRa(transmit_message)
+                return received_message
+            else:
+                print("Device 2 did not receive any message.")
+                return "No data"
 
 
 
-                """
-                Write into main_locom_pool
-                if matching_message:
-                    response = "Acknowledged" if matching_message == random_sentence else "Non-Matching"
-                    print(f"{self.device_id} message validation: {response}")
 
-                    byte_list = encode_sentence(response)
-                    message = byte_list + [ord(DELIMITER)]
-                    transmitter_func(self.device_id, SLOT_DURATION, message, lora_tx)
-                    print(f"{self.device_id} finished transmitting. END OF PROGRAM")
-                else:
-                    print(f"{self.device_id} did not receive valid data.")
-                break"
-                """
+            """
+            Write into main_locom_pool
+            if matching_message:
+                response = "Acknowledged" if matching_message == random_sentence else "Non-Matching"
+                print(f"{self.device_id} message validation: {response}")
+
+                byte_list = encode_sentence(response)
+                message = byte_list + [ord(DELIMITER)]
+                transmitter_func(self.device_id, SLOT_DURATION, message, lora_tx)
+                print(f"{self.device_id} finished transmitting. END OF PROGRAM")
+            else:
+                print(f"{self.device_id} did not receive valid data.")
+            break"
+            """
 
 

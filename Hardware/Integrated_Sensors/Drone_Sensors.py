@@ -1,8 +1,9 @@
 import smbus2
 import time
 import struct
+import pigpio
 
-class DroneSensors:
+class BatterySensors:
     
     BATTERY_TUBE_A_ADDR = 0x0A  # Arduino Nano A
     BATTERY_TUBE_B_ADDR = 0x0B  # Arduino Nano B
@@ -74,7 +75,62 @@ class DroneSensors:
             )
             time.sleep(interval)
 
-# This code block runs when the module is executed directly.
-if __name__ == "__main__":
-    sensors = DroneSensors()
-    sensors.battery_tube_readouts()
+
+class TemperaturePressure:
+    
+    def __init__(self, i2c_bus=1, sensor_address=0x40):
+        self.pi = pigpio.pi()  # Connect to the pigpio daemon
+        self.handle = self.pi.i2c_open(i2c_bus, sensor_address)  # Open I2C
+        self.zero_air_pressure = None  # Initial air pressure reference
+
+    def crc8(self, data):
+        crc = 0
+        for d in data:
+            crc ^= d << 8
+            for _ in range(8):
+                if crc & 0x8000:
+                    crc ^= 0x8380
+                crc <<= 1
+        return (crc >> 8) & 0xFF
+
+    def read_sensor_float(self, regAddr):
+        request = [0x20, regAddr]
+        request.append(self.crc8(request))
+        self.pi.i2c_write_device(self.handle, bytes(request))
+        time.sleep(0.02)  # Wait for sensor data
+        count, data = self.pi.i2c_read_device(self.handle, 7)
+        if count < 7:
+            print("\n\n\n>>>>>>>> ERROR: read 7 bytes\n\n\n")
+            return None
+        response = list(data)
+        if self.crc8(response[:6]) != response[6]:
+            print("\n\n\n>>>>>>>> ERROR: CRC\n\n\n")
+            return None
+        if (response[0] & 0x10) == 0:
+            print("\n\n\n>>>>>>>> ERROR: ready flag\n\n\n")
+            return None
+        raw = (response[2] << 24) | (response[3] << 16) | (response[4] << 8) | response[5]
+        return struct.unpack("!f", struct.pack("!I", raw))[0]
+
+    def get_depth(self):
+        g = 9.80600  # Gravity [m/s^2]
+        density = 997.0474  # Freshwater density [kg/m^3]
+        pressure = self.read_sensor_float(0x00)  # Read pressure in bar
+        if pressure is None:
+            return None
+        if self.zero_air_pressure is None:
+            self.zero_air_pressure = pressure
+        #print("P=", pressure, "bar")
+        depth = (pressure - self.zero_air_pressure) * 100000 / (g * density)
+        return round(depth, 3)
+
+    def get_temperature(self):
+        temp = self.read_sensor_float(0x04)
+        if temp is None:
+            return None
+        return round(temp, 1)
+
+    def close(self):
+        self.pi.i2c_close(self.handle)
+        self.pi.stop()
+ 
