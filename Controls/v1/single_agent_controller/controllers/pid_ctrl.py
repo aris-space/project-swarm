@@ -1,13 +1,14 @@
 import time
+from utils.constants2 import *
 
 class PID:
-    def __init__(self, kp:float, ki:float, kd:float, windup_max=None, saturation_max=None, set_point_weighting=False, weight_b=1, weight_c=1):
+    def __init__(self, kp:float, ki:float, kd:float, windup_max=None, max_sat=None, set_point_weighting=False, weight_b=1, weight_c=1):
         self.kp = kp
         self.ki = ki
         self.kd = kd
 
         self.windup_max = windup_max
-        self.saturation_max = saturation_max
+        self.saturation_max = max_sat
         self.set_point_weighting = set_point_weighting
         self.weight_b = weight_b
         self.weight_c = weight_c

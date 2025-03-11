@@ -87,7 +87,7 @@ def state_equations2(x: np.array, vehicle_model: dict):
     #Equations of motion
     #Translational equations
     # du_b_mps2
-    dx[6] = 1/m_kg*Fx_b_kgmps - w_b_mps*q_b_rps + v_b_mps*r_b_rps
+    dx[6] = 1/m_kg*Fx_b_kgmps - w_b_mps*q_b_rps + v_b_mps*r_b_rps 
     # dv_b_mps2
     dx[7] = 1/m_kg*Fy_b_kgmps - u_b_mps*r_b_rps + w_b_mps*p_b_rps
     # dw_b_mps2
