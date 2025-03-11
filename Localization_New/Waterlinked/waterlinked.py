@@ -4,7 +4,7 @@ import threading
 import time
 
 class WaterLinked:
-    def __init__(self, base_url, poll_interval=1.0, test_mode=True):
+    def __init__(self, base_url, poll_interval=1.0, test_mode=False):
         """
         Initializes the WaterLinked instance.
 
@@ -58,16 +58,10 @@ class WaterLinked:
         if self.latest_data:
             return f"{self.latest_data.get('x')}, {self.latest_data.get('y')}, {self.latest_data.get('z')}"
         else:
-            return ""
+            return "non raniah"
 
     def stop(self):
         """Stops the background thread gracefully."""
         self.running = False
         if self.thread:
             self.thread.join()
-
-
-# Create a single instance of WaterLinked for use in the communications module.
-# The communications code only needs to call waterlinked_instance.get_latest_position_string().
-waterlinked_instance = WaterLinked(base_url="http://192.168.7.1", poll_interval=1.0, test_mode=True)
-print(waterlinked_instance.get_latest_position())
