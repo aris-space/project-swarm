@@ -9,13 +9,14 @@ class WaterLinked:
         Initializes the WaterLinked instance.
 
         Parameters:
-        - base_url: URL of the WaterLinked system ("http://192.168.7.1")
+        - base_url: URL of the WaterLinked system (if connected to swarm: "http://192.168.8.108", if connected to UnderwaterGPS: "http://192.168.2.94")
         - poll_interval: How often (in seconds) to fetch new data.
         - test_mode: If True, dummy data is returned instead of making HTTP calls.
         """
         self.base_url = base_url
         self.poll_interval = poll_interval
         self.test_mode = test_mode
+        self.data_condition = threading.Condition() # used to signal when new data is available 
         self.latest_data = None  # Holds the most recent data (a dict)
         self.running = True
         # Create and automatically start the background thread
@@ -27,7 +28,10 @@ class WaterLinked:
         while self.running:
             data = self._fetch_data()
             if data:
-                self.latest_data = data
+                # signal that new data is available
+                with self.data_condition:
+                    self.latest_data = data
+                    self.data_condition.notify_all()                
             time.sleep(self.poll_interval)
 
     def _fetch_data(self):
@@ -50,15 +54,32 @@ class WaterLinked:
 
         return response.json()
 
-    def get_latest_position(self):
+    def get_latest_position(self, timeout=None):
         """
         Returns the latest position as a formatted string 'x, y, z'.
         If no data is available yet, returns an empty string.
         """
-        if self.latest_data:
-            return f"{self.latest_data.get('x')}, {self.latest_data.get('y')}, {self.latest_data.get('z')}"
-        else:
-            return "non raniah"
+        with self.data_condition:
+            if self.latest_data is None:
+                self.data_condition.wait(timeout=timeout) # wait until new data is available
+            if self.latest_data:
+                x = round(self.latest_data.get('x',0),2)
+                y = round(self.latest_data.get('y',0),2)
+                z = round(self.latest_data.get('z',0),2)
+
+                brim_size = 0.3 # distance from wall
+                if x < brim_size:
+                    x = brim_size
+                elif x > 5 - brim_size:
+                    x = 5 - brim_size
+                if y < brim_size:
+                    y = brim_size
+                elif y > 2.5 - brim_size:
+                    y = 2.5 - brim_size
+
+                return [x, y, z]
+            else:
+                return ""
 
     def stop(self):
         """Stops the background thread gracefully."""
