@@ -29,7 +29,7 @@ RUNTIME = NUM_PLANNER_UPDATES / PLANNER_FREQ
 
 #SUB PROPERTIES => TO BE COMPLETED WITH SIM PARAMS
 MASS = 5 #in kg
-DRAG_COEFFICIENT = 0.6
+DRAG_COEFFICIENT = 0.0
 
 
 #Controll allocation constants
@@ -69,4 +69,10 @@ ESC_NEUTRAL = 1500           # Neutral pulse width (1.5 ms)
 
 
 #controller test
-CONTROLLER_TEST_DURATION = 10
+CONTROLLER_TEST_DURATION = 600
+
+#Saturation limit for PID response
+MAX_SAT = 0.3
+
+#distance to update to next waypoint
+DISTANCE_NEXTWAYPOINT = 5
