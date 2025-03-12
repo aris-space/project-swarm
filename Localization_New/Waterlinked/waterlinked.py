@@ -79,7 +79,7 @@ class WaterLinked:
 
                 return [x, y, z]
             else:
-                return ""
+                return None
 
     def stop(self):
         """Stops the background thread gracefully."""
