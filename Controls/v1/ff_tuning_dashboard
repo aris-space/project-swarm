@@ -1,0 +1,196 @@
+import zmq
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import tkinter as tk
+from tkinter import ttk
+import threading
+import time
+
+class FFTuningDashboard:
+    def __init__(self, root, zmq_address="tcp://localhost:5555"):
+        self.root = root
+        self.root.title("Feedforward Tuning Dashboard")
+        self.root.geometry("1000x700")
+        
+        self.zmq_address = zmq_address
+        self.running = False
+        self.data_buffer_1 = {"time": [], "value": []}
+        self.data_buffer_2 = {"time": [], "value": []}
+        
+        # Parameters with default values
+        self.parameters = {
+            "param1": tk.DoubleVar(value=1.0),
+            "param2": tk.DoubleVar(value=0.5),
+            "param3": tk.DoubleVar(value=0.1),
+            "param4": tk.DoubleVar(value=2.0),
+            "param5": tk.DoubleVar(value=1.5),
+            "param6": tk.DoubleVar(value=0.8),
+        }
+        
+        self.setup_gui()
+        
+    def setup_gui(self):
+        # Create frames
+        control_frame = ttk.Frame(self.root)
+        control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        
+        plot_frame = ttk.Frame(self.root)
+        plot_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Setup control elements
+        self.setup_controls(control_frame)
+        
+        # Setup plots
+        self.setup_plots(plot_frame)
+        
+    def setup_controls(self, parent):
+        # Parameters
+        param_frame = ttk.LabelFrame(parent, text="Parameters")
+        param_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5, pady=5)
+        
+        # Create sliders for each parameter
+        for i, (name, var) in enumerate(self.parameters.items()):
+            ttk.Label(param_frame, text=name).grid(row=i, column=0, padx=5, pady=5, sticky=tk.W)
+            slider = ttk.Scale(param_frame, from_=0.0, to=10.0, orient=tk.HORIZONTAL, 
+                              variable=var, length=200)
+            slider.grid(row=i, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
+            
+            entry = ttk.Entry(param_frame, textvariable=var, width=8)
+            entry.grid(row=i, column=2, padx=5, pady=5)
+            
+            # Bind callback to update entry when slider moves
+            var.trace_add("write", lambda *args, v=var, e=entry: e.delete(0, tk.END) or e.insert(0, f"{v.get():.2f}"))
+        
+        # Button frame
+        button_frame = ttk.Frame(parent)
+        button_frame.pack(side=tk.RIGHT, padx=5, pady=5)
+        
+        # Start button
+        self.start_button = ttk.Button(button_frame, text="Start", command=self.start_monitoring)
+        self.start_button.pack(side=tk.LEFT, padx=5)
+        
+        # Stop button
+        self.stop_button = ttk.Button(button_frame, text="Stop", command=self.stop_monitoring, state=tk.DISABLED)
+        self.stop_button.pack(side=tk.LEFT, padx=5)
+    
+    def setup_plots(self, parent):
+        # Create figure and subplots
+        self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(10, 6))
+        
+        # Configure plots
+        self.ax1.set_title('Data Stream 1')
+        self.ax1.set_xlabel('Time')
+        self.ax1.set_ylabel('Value')
+        self.ax1.grid(True)
+        
+        self.ax2.set_title('Data Stream 2')
+        self.ax2.set_xlabel('Time')
+        self.ax2.set_ylabel('Value')
+        self.ax2.grid(True)
+        
+        # Create line objects
+        self.line1, = self.ax1.plot([], [], 'b-', label='Stream 1')
+        self.line2, = self.ax2.plot([], [], 'r-', label='Stream 2')
+        
+        # Add legends
+        self.ax1.legend()
+        self.ax2.legend()
+        
+        # Embed in Tkinter
+        self.canvas = FigureCanvasTkAgg(self.fig, master=parent)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
+    def start_monitoring(self):
+        if not self.running:
+            self.running = True
+            self.start_button.config(state=tk.DISABLED)
+            self.stop_button.config(state=tk.NORMAL)
+            
+            # Start ZMQ thread
+            self.zmq_thread = threading.Thread(target=self.receive_data)
+            self.zmq_thread.daemon = True
+            self.zmq_thread.start()
+            
+            # Start update thread
+            self.update_thread = threading.Thread(target=self.update_plots)
+            self.update_thread.daemon = True
+            self.update_thread.start()
+    
+    def stop_monitoring(self):
+        self.running = False
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+    
+    def receive_data(self):
+        context = zmq.Context()
+        socket = context.socket(zmq.SUB)
+        socket.connect(self.zmq_address)
+        socket.setsockopt_string(zmq.SUBSCRIBE, "")
+        
+        while self.running:
+            try:
+                data = socket.recv_string(flags=zmq.NOBLOCK).strip().split(',')
+                if len(data) >= 3:  # Ensure we have time, value1, value2
+                    timestamp = float(data[0])
+                    value1 = float(data[1])
+                    value2 = float(data[2])
+                    
+                    # Apply parameter adjustments if needed
+                    # This is just an example - modify based on your needs
+                    param1 = self.parameters["param1"].get()
+                    param2 = self.parameters["param2"].get()
+                    
+                    # Update buffers
+                    self.data_buffer_1["time"].append(timestamp)
+                    self.data_buffer_1["value"].append(value1 * param1)
+                    
+                    self.data_buffer_2["time"].append(timestamp)
+                    self.data_buffer_2["value"].append(value2 * param2)
+                    
+                    # Limit buffer size
+                    max_points = 1000
+                    if len(self.data_buffer_1["time"]) > max_points:
+                        self.data_buffer_1["time"] = self.data_buffer_1["time"][-max_points:]
+                        self.data_buffer_1["value"] = self.data_buffer_1["value"][-max_points:]
+                        self.data_buffer_2["time"] = self.data_buffer_2["time"][-max_points:]
+                        self.data_buffer_2["value"] = self.data_buffer_2["value"][-max_points:]
+                
+            except zmq.Again:
+                # No message available yet
+                time.sleep(0.01)
+            except Exception as e:
+                print(f"Error receiving data: {e}")
+                time.sleep(0.1)
+        
+        socket.close()
+        context.term()
+    
+    def update_plots(self):
+        while self.running:
+            try:
+                if self.data_buffer_1["time"]:
+                    # Update line data
+                    self.line1.set_data(self.data_buffer_1["time"], self.data_buffer_1["value"])
+                    self.line2.set_data(self.data_buffer_2["time"], self.data_buffer_2["value"])
+                    
+                    # Adjust axes
+                    self.ax1.relim()
+                    self.ax1.autoscale_view()
+                    self.ax2.relim()
+                    self.ax2.autoscale_view()
+                    
+                    # Draw the canvas
+                    self.canvas.draw_idle()
+                
+                time.sleep(0.05)  # Update at 20 FPS
+                
+            except Exception as e:
+                print(f"Error updating plots: {e}")
+                time.sleep(0.1)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = FFTuningDashboard(root)
+    root.mainloop()

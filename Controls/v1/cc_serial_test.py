@@ -16,6 +16,57 @@ def send_input():
             print("Sent: 0")
 
 
+def receive_input_xsens(ser, quat_offsets, quat, angular_rates, acceleration):
+    if ser.in_waiting > 0:
+        line = ser.readline().decode('utf-8', errors='replace').strip()
+        if "QR" in line:
+            j+=1
+            values = line.split(",")[-1].strip()
+            quat_offsets = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            if (j%50 == 0): print("Quaternion relative to offsets:", quat_offsets)
+        elif "Q:" in line and "R" not in line:
+            k+=1
+            values = line.split(",")[-1].strip()
+            quat = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            if (k%50 == 0): print("Quaternion:", quat)
+        elif "R" in line and "Q" not in line:
+            l+=1
+            values = line.split(",")[-1].strip()
+            angular_rates = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            if (l%50 == 0): print("Angular Rates (x,y,z):", angular_rates)
+        elif "A" in line:
+            m+=1
+            values = line.split(",")[-1].strip()
+            acceleration = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            if (m%50 == 0): print("Acceleration", acceleration)
+        else:
+            print("Unknown line:", line)
+
+
+if __name__ == "__main__":
+    ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+    ser.flush()
+
+    quat_offsets = np.array([])
+    quat = np.array([])
+    angular_rates = np.array([])
+    acceleration = np.array([])
+
+    j=0
+    k=0
+    l=0
+    m=0
+
+    #Start input thread
+    threading.Thread(target=send_input, daemon=True).start()
+
+    while True:
+        receive_input_xsens(ser, quat_offsets, quat, angular_rates, acceleration)
+
+
+"""
+#not used currently, this is for bno055
+
 
 if __name__ == "__main__":
     ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
@@ -83,3 +134,4 @@ if __name__ == "__main__":
 
 
 
+"""
