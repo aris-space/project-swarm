@@ -4,6 +4,12 @@ import keyboard
 import sys
 import threading
 
+j=0
+k=0
+l=0
+m=0
+
+
 
 def send_input():
     while True:
@@ -16,34 +22,38 @@ def send_input():
             print("Sent: 0")
 
 
+
+
+
 def receive_input_xsens(ser, quat_offsets, quat, angular_rates, acceleration):
+
+    global j,k,l,m
+
     if ser.in_waiting > 0:
+        print(j, k, l, m)
         line = ser.readline().decode('utf-8', errors='replace').strip()
         if "QR" in line:
             j+=1
-            values = line.split(",")[-1].strip()
-            quat_offsets = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            quat_offsets = np.array(line[3:].split(','), dtype = float)
             if (j%50 == 0): print("Quaternion relative to offsets:", quat_offsets)
-        elif "Q:" in line and "R" not in line:
+        elif 'Q' in line:
             k+=1
-            values = line.split(",")[-1].strip()
-            quat = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            quat = np.array(line[2:].split(','), dtype = float)
             if (k%50 == 0): print("Quaternion:", quat)
         elif "R" in line and "Q" not in line:
             l+=1
-            values = line.split(",")[-1].strip()
-            angular_rates = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            angular_rates = np.array(line[2:].split(','), dtype = float)
             if (l%50 == 0): print("Angular Rates (x,y,z):", angular_rates)
         elif "A" in line:
             m+=1
-            values = line.split(",")[-1].strip()
-            acceleration = np.array([float(x) for x in values.split(",") if x.strip() != ""])
+            acceleration = np.array(line[2:].split(','), dtype = float)
             if (m%50 == 0): print("Acceleration", acceleration)
         else:
             print("Unknown line:", line)
 
 
 if __name__ == "__main__":
+    
     ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
     ser.flush()
 
@@ -51,11 +61,6 @@ if __name__ == "__main__":
     quat = np.array([])
     angular_rates = np.array([])
     acceleration = np.array([])
-
-    j=0
-    k=0
-    l=0
-    m=0
 
     #Start input thread
     threading.Thread(target=send_input, daemon=True).start()
