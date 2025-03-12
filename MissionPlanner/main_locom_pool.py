@@ -3,6 +3,10 @@ import sys
 import time
 import threading
 import random
+import numpy as np
+import serial
+import keyboard
+
 sys.path.insert(0, "/shared_folder/project-swarm")
 
 from Communication.transceive_functions import *
@@ -10,6 +14,7 @@ from Localization_New.Waterlinked.waterlinked import *
 from Utils.utils_functions import *
 from MissionPlanner.swarm_storage import *
 from Hardware.Integrated_Sensors.Drone_Sensors import *
+from Hardware.Xsens_IMU.Xsens_IMU import *
 #from data_classes import *
 
 
@@ -133,18 +138,34 @@ def control_thread():
     control_poll_interval = 0.1  # Control loop frequency
 
     while True:
-        try:
-            accel_values = np.array([0.0092, 0.0072, -0.871])
+        try:     
+            start_time = time.time()  # Start the timer
+            imu.receive_input_xsens()  # Process one line from the IMU
+            end_time = time.time()  # Stop the timer
+            execution_time = end_time - start_time 
+            print(execution_time)
+
+            accel_values = imu.get_acceleration()
+            print(accel_values)
+            angular_values = imu.get_angular_rates()
+            quat_values = imu.get_quaternion()
+            quat_offsets_values = imu.get_quat_offsets()
+
             swarm_data.filtered_drones[drone_id].update_acceleration(accel_values)
             print("Drone 1 acceleration:", swarm_data.filtered_drones[drone_id].acceleration)
 
-            angular_values = np.array([0.001, 0.002, 0.003])
-            swarm_data.filtered_drones[drone_id].update_angular_rates(angular_values)
-            print("Drone 1 angular rates:", swarm_data.filtered_drones[drone_id].angular_rates)
+            print("Drone 1 acceleration:", swarm_data.filtered_drones[drone_id].acceleration.ax)
 
-            quat_values = np.array([0.5, 0.5, 0.5, 0.5])
+            swarm_data.filtered_drones[drone_id].update_angular_rates(angular_values)
+            print("Drone 1 angular rates:", swarm_data.filtered_drones[drone_id].angular_rates.roll_rate)
+
             swarm_data.filtered_drones[1].update_quaternion(quat_values)
-            print("Drone 1 quaternion:", swarm_data.filtered_drones[1].quaternion)
+            print("Drone 1 quaternion:", swarm_data.filtered_drones[1].quaternion.qy)
+
+            swarm_data.filtered_drones[drone_id].update_quat_offsets(quat_offsets_values)
+            print("Drone 1 quaternion offsets:", swarm_data.filtered_drones[drone_id].quat_offsets.qw)
+
+
         except Exception as e:
             print(f"Control error: {e}")
 
@@ -170,6 +191,8 @@ if __name__ == "__main__":
     lora_transceiver = LoRa_Transceiver(device_id=drone_id, slot_duration=4)
     get_localization = WaterLinked(base_url="http://192.168.8.108", poll_interval=1.0, test_mode=True)
     Keller_Sensor = TemperaturePressure() #need sudo pigpiod in terminal!!!!
+
+    imu = Xsens_IMU()
 
 
     #GET LOCALIZATION: 
