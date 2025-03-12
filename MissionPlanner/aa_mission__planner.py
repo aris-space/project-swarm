@@ -71,7 +71,41 @@ if __name__ == "__main__":
     position_y = swarm_data.drones[2].waypoint
     print(position_y)
 
+    """
+    temperature = Keller_Sensor.get_temperature()
+    swarm_data.drones[drone_id].update_temperature(temperature)
+    temperature_of_current_drone = swarm_data.drones[drone_id].system_state.temperature
+    print(temperature_of_current_drone)
 
+    
+    start_time = time.time()
+    while time.time() - start_time < 5:
+        depth = Keller_Sensor.get_depth()
+        print(depth)
+    
+    #swarm_data.drones[drone_id].update_position(z=depth)
+    #depth_of_current_drone = swarm_data.drones[drone_id].z
+    #print(depth_of_current_drone)
+    
+    # Update drone 1's sensor data with the new position.
+    # This call will only update the position while keeping other values at their defaults.
+    swarm_data.drones[drone_id].update_from_list(position_data)
+
+    # Extracting the complete Position object for drone 1:
+    position_of_drone_1 = swarm_data.drones[drone_id].position
+    print("Complete Position:", position_of_drone_1)
+    position_y = swarm_data.drones[drone_id].position.y
+    print(position_y)
+
+    # Format the drone data for transmission
+    message_to_send = swarm_data.drones[drone_id].format_drone_data()
+    received_list = lora_transceiver.main_locom(message_to_send)
+
+    if received_list == message_to_send:
+        print("Acknowledged") 
+    else: 
+        print("Non-matching")
+    """
 
 
     #message_to_send = f"{drone_id}, {current_position.x}, {current_position.y}, {current_position.z}" #define specific func to do this!
