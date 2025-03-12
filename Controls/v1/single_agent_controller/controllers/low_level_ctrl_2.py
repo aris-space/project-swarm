@@ -101,7 +101,7 @@ class LLC2:
     """position determined via ultrasonic sensors"""
     
 
-    def __init__(self, pid_params:dict, init_params:dict):
+    def __init__(self, pid_params:dict, init_params:dict, max_sat=None):
         """
         Initialize six PIDs, one for each angle and one for each rate in the local frame
         Initialize two PIDs, one for x position and one for x velocity in the local frame
@@ -122,9 +122,9 @@ class LLC2:
         self.local_pitch_rate_ctrl = PID(**pid_params['pitch']['rate'])
         self.local_yaw_rate_ctrl = PID(**pid_params['yaw']['rate'])
 
-        self.global_x_ctrl = PID(**pid_params['x']['abs'])
-        self.global_y_ctrl = PID(**pid_params['y']['abs'])
-        self.global_z_ctrl = PID(**pid_params['z']['abs'])
+        self.global_x_ctrl = PID(max_sat=max_sat, **pid_params['x']['abs'])
+        self.global_y_ctrl = PID(max_sat=max_sat, **pid_params['y']['abs'])
+        self.global_z_ctrl = PID(max_sat=max_sat, **pid_params['z']['abs'])
 
         self.local_r_ctrl = PID_w_error(**pid_params['x']['abs'])  #(**pid_params['r']['abs']) change this later
 
@@ -170,6 +170,9 @@ class LLC2:
 
         self.dt = T_LLC
 
+        #distance update to next waypoint
+        self.distance_nextwaypoint = DISTANCE_NEXTWAYPOINT
+        self.current_waypoint_index = 0
 
     def update_w_mode1(self, dt=1/LLC_FREQ):
         """
@@ -223,12 +226,56 @@ class LLC2:
 
         return thrustx, thrusty, thrustz, torquex, torquey, torquez
     
-    def update_w_mode4(angular_rate):
+    
+    def update_w_mode4(self, angular_rate):
         #just update a single rate PID for PID tuning
 
         return self.update_actual_local_rates(angular_rate[0], angular_rate[1], angular_rate[2])
 
+    def update_w_mode5(self):
+        """
+        Mode 5:
+        Während der Fahrt zum aktuellen Wegpunkt wird geprüft, ob das Fahrzeug weniger als 0,5 Meter
+        vom aktuellen Ziel entfernt ist. Falls ja, wird automatisch der nächste Wegpunkt geladen,
+        sodass das Fahrzeug ohne abruptes Abbremsen in den nächsten Zielpfad übergeht.
+        """
 
+        finished = False
+
+        # Berechne den aktuellen Abstand zum Zielpunkt
+        current_distance = np.linalg.norm(self.global_position_target - self.global_position_estimate)
+        # Wenn das Fahrzeug weniger als 0,5 Meter vom Ziel entfernt ist, lade den nächsten Wegpunkt
+        if current_distance < self.distance_nextwaypoint: 
+            if(self.load_next_waypoint()): 
+                finished = True
+            
+        
+        # Weiterverarbeitung analog zu Mode 3:
+        self.update_angle_pids()
+        self.update_position_pids()
+        self.convert_global_vel_to_local_vel()
+        
+        # Berechne die Steuerbefehle: Torques und Thrusts
+        torquex, torquey, torquez = self.update_angle_rate_pids()
+        thrustx, thrusty, thrustz = self.update_veloctiy_pids()
+        
+        return thrustx, thrusty, thrustz, torquex, torquey, torquez, finished
+
+    def load_next_waypoint(self):
+        self.current_waypoint_index += 1
+        print(self.current_waypoint_index)
+
+
+        if self.current_waypoint_index >= len(waypoints)-1:
+            self.current_waypoint_index = len(waypoints)-1  # oder setze current_waypoint_index auf len(waypoints)-1, wenn man anhalten möchte
+            print("faustin, die waypoint liste ist fertig!")
+            return True
+        
+
+        new_wp = waypoints[self.current_waypoint_index]
+        self.global_position_target = np.array([new_wp['x'], new_wp['y'], new_wp['z']])
+        self.global_orientation_target_quat = self.euler_zyx_to_quaternion(new_wp['yaw'], new_wp['pitch'], new_wp['roll'])
+        return False
 
     def update_global_orientation_w_state(self, z,y,x, dt=1/LLC_FREQ):
         """
@@ -364,14 +411,14 @@ class LLC2:
     #def update_z_pid(self, dt=1/LLC_FREQ):
     
 
-    #def update_actual_local_velocities(self, local_x_vel, local_y_vel, local_z_vel):
+    def update_actual_local_velocities(self, local_x_vel, local_y_vel, local_z_vel):
         """
         stores local velocities given by a SIM or IMU
         """
             
-    #    self.actual_local_x_vel = local_x_vel
-    #    self.actual_local_y_vel = local_y_vel
-    #    self.actual_local_z_vel = local_z_vel
+        self.actual_local_x_vel = local_x_vel
+        self.actual_local_y_vel = local_y_vel
+        self.actual_local_z_vel = local_z_vel
 
 
     def update_r_pids(self, dt=1/LLC_FREQ):
@@ -486,7 +533,7 @@ class LLC2:
         meaning that pitch is the rotation around the rotated y-axis => y' and roll is the rotation around the rotated x-axis => x''
         """
 
-        return R.from_euler('zyx', [yaw, pitch, roll], degrees=False).as_quat()
+        return R.from_euler('zyx', [yaw, pitch, roll], degrees=True).as_quat()
     
     def quaternion_multiply(self, q1, q2):
         """

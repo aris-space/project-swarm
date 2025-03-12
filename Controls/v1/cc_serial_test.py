@@ -4,6 +4,12 @@ import keyboard
 import sys
 import threading
 
+j=0
+k=0
+l=0
+m=0
+
+
 
 def send_input():
     while True:
@@ -15,6 +21,56 @@ def send_input():
             ser.write(b'\n0')
             print("Sent: 0")
 
+
+
+
+
+def receive_input_xsens(ser, quat_offsets, quat, angular_rates, acceleration):
+
+    global j,k,l,m
+
+    if ser.in_waiting > 0:
+        print(j, k, l, m)
+        line = ser.readline().decode('utf-8', errors='replace').strip()
+        if "QR" in line:
+            j+=1
+            quat_offsets = np.array(line[3:].split(','), dtype = float)
+            if (j%50 == 0): print("Quaternion relative to offsets:", quat_offsets)
+        elif 'Q' in line:
+            k+=1
+            quat = np.array(line[2:].split(','), dtype = float)
+            if (k%50 == 0): print("Quaternion:", quat)
+        elif "R" in line and "Q" not in line:
+            l+=1
+            angular_rates = np.array(line[2:].split(','), dtype = float)
+            if (l%50 == 0): print("Angular Rates (x,y,z):", angular_rates)
+        elif "A" in line:
+            m+=1
+            acceleration = np.array(line[2:].split(','), dtype = float)
+            if (m%50 == 0): print("Acceleration", acceleration)
+        else:
+            print("Unknown line:", line)
+
+
+if __name__ == "__main__":
+    
+    ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+    ser.flush()
+
+    quat_offsets = np.array([])
+    quat = np.array([])
+    angular_rates = np.array([])
+    acceleration = np.array([])
+
+    #Start input thread
+    threading.Thread(target=send_input, daemon=True).start()
+
+    while True:
+        receive_input_xsens(ser, quat_offsets, quat, angular_rates, acceleration)
+
+
+"""
+#not used currently, this is for bno055
 
 
 if __name__ == "__main__":
@@ -83,3 +139,4 @@ if __name__ == "__main__":
 
 
 
+"""
