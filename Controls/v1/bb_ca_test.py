@@ -14,20 +14,25 @@ if __name__ == "__main__":
     llc = LLC2(CONSTANTS['pid_params'], CONSTANTS['init_params'])
     sca = SCA(llc)
 
+    sca.update_motor_thrusts_manual(40, 0, 0)
+
     """
-    sca.update_motor_thrusts_manual(100, 0, 0)
     what should happen: only z motors spin, left motors push air downward, right motors push air upwards
     works
     """
+    time.sleep(20)
+
+
+    sca.update_motor_thrusts_manual(0, 40, 0)
 
     """
-    sca.update_motor_thrusts_manual(0, 100, 0)
     what should happen: only z motors spin, front motors push air upwards, back motors push air downwards
     works
     """
+    time.sleep(20)
 
 
-    sca.update_motor_thrusts_manual(0, 0, 100)
+    sca.update_motor_thrusts_manual(0, 0, 40)
     """
     what should happen: every motor pushes air in clockwise direction
     """
@@ -37,6 +42,7 @@ if __name__ == "__main__":
     time.sleep(20)
 
     sca.update_motor_thrusts_manual(0,0,0)
+
 
     sca.update_motor_thrusts_nonzero(10)
 
