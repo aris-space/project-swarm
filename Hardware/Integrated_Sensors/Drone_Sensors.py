@@ -3,6 +3,7 @@ import time
 import struct
 import pigpio
 
+
 class BatterySensors:
     
     BATTERY_TUBE_A_ADDR = 0x0A  # Arduino Nano A
@@ -134,3 +135,5 @@ class TemperaturePressure:
         self.pi.i2c_close(self.handle)
         self.pi.stop()
  
+
+

@@ -15,7 +15,7 @@ class LoRa_Transceiver:
         self.slot_duration = slot_duration  # Use self.slot_duration consistently
         self.string_to_transmit = ""
         self.received_message = ""
-        self.request_slot = 100
+        self.request_slot = 50
         self._setup_lora()
         self.delimiter = "/"  # Message delimiter
 
@@ -135,22 +135,25 @@ class LoRa_Transceiver:
 
 
     def transmit_LoRa(self, message):
+        print(f"Begin transmitting message: {message}")
+        transmit_message = self.custom_pack(message) 
         self.LoRa.purge()  # Clear buffer
         self.LoRa.beginPacket()
-        self.LoRa.put(message)
+        self.LoRa.put(transmit_message)
         self.LoRa.endPacket()
-        self.LoRa.wait()
+        #self.LoRa.wait()
 
         #print(f"{self.device_id} finished transmitting: {message}")
         #print("Transmit time: {0:0.2f} ms | Data rate: {1:0.2f} byte/s".format(self.LoRa.transmitTime(), self.LoRa.dataRate()))
 
     def receive_LoRa(self):
+        start_time = time.perf_counter()
         self.LoRa.purge()  # Clear previous buffer
 
         if not self.LoRa.request(self.request_slot):
             print("Failed to start RX mode.")
             return None
-
+        
         self.LoRa.wait()
         status = self.LoRa.status()
 
@@ -165,6 +168,9 @@ class LoRa_Transceiver:
 
         elif status == self.LoRa.STATUS_RX_TIMEOUT:
             print("Timeout: No packet received.")
+            end_time = time.perf_counter()  # End timing 
+            elapsed_time = end_time - start_time 
+            print(elapsed_time)
             return None
         elif status == self.LoRa.STATUS_CRC_ERR:
             print("CRC Error: Corrupted packet.")
