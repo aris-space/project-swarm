@@ -6,6 +6,8 @@ import random
 import numpy as np
 import serial
 import keyboard
+import zmq
+import json
 
 sys.path.insert(0, "/shared_folder/project-swarm")
 
@@ -144,6 +146,14 @@ def control_thread():
     """
     control_poll_interval = 0.1  # Control loop frequency
 
+
+    # ZeroMQ setup
+    context = zmq.Context()
+    socket = context.socket(zmq.PUB)
+    socket.bind("tcp://*:5555")  # Bind to a port PlotJuggler will connect to
+
+    time_start = time.time()
+
     while True:
         try:     
 
@@ -163,6 +173,8 @@ def control_thread():
             with open('data_log.log', 'ab') as log:
                 for i in range(0, num_steps):
 
+                    print("hey")
+
                     pos_x = swarm_data.raw_drones[2].position.x
                     pos_y = swarm_data.raw_drones[2].position.y
                     pos_z = swarm_data.raw_drones[2].position.z
@@ -179,8 +191,27 @@ def control_thread():
                     
                     llc.update_global_position(pos_x, pos_y, pos_z)
                     time.sleep(0.1) 
+
+                    elapsed_time = time.time() - time_start
+
+                    value = {
+                        "timestamp": elapsed_time,  # Zeit in Sekunden seit Scriptstart
+                        "variables": {
+                            "pos_x": pos_x,  
+                            "pos_y": pos_y,  
+                            "pos_z": pos_z,
+                            },
+                        }
+
+                    # Sende Daten als JSON mit dem Thema "sincos"
+                    socket.send_string("controls", zmq.SNDMORE)
+                    socket.send_string(json.dumps(value))
                     
             data = np.loadtxt('data_log.log',delimiter=',')
+
+
+            socket.close()
+            context.term()
 
             """
             print(pos_x)
@@ -226,6 +257,7 @@ def control_thread():
 """Run code with: python aa_mission_planner.py --Drone_ID=<Drone_ID> in Terminal!!"""
 
 if __name__ == "__main__":
+    
 
     drone_id = get_drone_id()
     print(f"Drone ID: {drone_id}")
@@ -258,7 +290,7 @@ if __name__ == "__main__":
     control_thread_obj = threading.Thread(target=control_thread, name="ControlThread", daemon=True)
 
     #sensor_thread_obj.start()
-    #communication_thread_obj.start()
+    communication_thread_obj.start()
     control_thread_obj.start()
 
 
