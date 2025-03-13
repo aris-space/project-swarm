@@ -241,14 +241,11 @@ class LLC2:
         """
 
         finished = False
-
-        # Berechne den aktuellen Abstand zum Zielpunkt
+        # Berechne den aktuellen Abstand zum Zielpunkt, wenn das Fahrzeug weniger als 0,5 Meter vom Ziel entfernt ist, lade den nächsten Wegpunkt
         current_distance = np.linalg.norm(self.global_position_target - self.global_position_estimate)
-        # Wenn das Fahrzeug weniger als 0,5 Meter vom Ziel entfernt ist, lade den nächsten Wegpunkt
         if current_distance < self.distance_nextwaypoint: 
             if(self.load_next_waypoint()): 
                 finished = True
-            
         
         # Weiterverarbeitung analog zu Mode 3:
         self.update_angle_pids()
@@ -257,9 +254,12 @@ class LLC2:
         
         # Berechne die Steuerbefehle: Torques und Thrusts
         torquex, torquey, torquez = self.update_angle_rate_pids()
-        thrustx, thrusty, thrustz = self.update_veloctiy_pids()
+        #thrustx, thrusty, thrustz = self.update_veloctiy_pids()
+        desired_x_vel = self.desired_local_x_vel
+        desired_y_vel = self.desired_local_y_vel
+        desired_z_vel = self.desired_local_z_vel
         
-        return thrustx, thrusty, thrustz, torquex, torquey, torquez, finished
+        return desired_x_vel, desired_y_vel, desired_z_vel, torquex, torquey, torquez, finished
 
     def load_next_waypoint(self):
         self.current_waypoint_index += 1
