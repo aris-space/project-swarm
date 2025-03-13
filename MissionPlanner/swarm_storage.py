@@ -39,6 +39,14 @@ class Quaternion:
     qz: float
     qw: float
 
+# New Data Class for Quaternion Offsets
+@dataclass
+class Quaternion_Offsets:
+    qx: float
+    qy: float
+    qz: float
+    qw: float
+
 # --- Raw Sensor Data Class ---
 @dataclass
 class DroneRawData:
@@ -135,6 +143,7 @@ class DroneFilteredData:
     acceleration: Optional[Acceleration] = None
     angular_rates: Optional[AngularRates] = None
     quaternion: Optional[Quaternion] = None
+    quat_offsets: Optional[Quaternion_Offsets] = None
 
     last_data: Optional["DroneFilteredData"] = None
     last_received_time: Optional[datetime] = None
@@ -207,6 +216,12 @@ class DroneFilteredData:
         if len(values) != 4:
             raise ValueError("A numpy array of exactly four values is required for quaternion (qx, qy, qz, qw).")
         self.quaternion = Quaternion(qx=float(values[0]), qy=float(values[1]), qz=float(values[2]), qw=float(values[3]))
+        self.last_received_time = datetime.now()
+
+    def update_quat_offsets(self, values: np.ndarray):
+        if len(values) != 4:
+            raise ValueError("A numpy array of exactly four values is required for quaternion offsets (qx, qy, qz, qw).")
+        self.quat_offsets = Quaternion_Offsets(qx=float(values[0]), qy=float(values[1]), qz=float(values[2]), qw=float(values[3]))
         self.last_received_time = datetime.now()
 
 
