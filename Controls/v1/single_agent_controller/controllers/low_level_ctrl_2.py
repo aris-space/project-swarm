@@ -260,6 +260,33 @@ class LLC2:
         desired_z_vel = self.desired_local_z_vel
         
         return desired_x_vel, desired_y_vel, desired_z_vel, torquex, torquey, torquez, finished
+    
+
+    def update_w_mode6(self):
+        """
+        Mode 5:
+        Während der Fahrt zum aktuellen Wegpunkt wird geprüft, ob das Fahrzeug weniger als 0,5 Meter
+        vom aktuellen Ziel entfernt ist. Falls ja, wird automatisch der nächste Wegpunkt geladen,
+        sodass das Fahrzeug ohne abruptes Abbremsen in den nächsten Zielpfad übergeht.
+        """
+
+        finished = False
+        # Berechne den aktuellen Abstand zum Zielpunkt, wenn das Fahrzeug weniger als 0,5 Meter vom Ziel entfernt ist, lade den nächsten Wegpunkt
+        current_distance = np.linalg.norm(self.global_position_target - self.global_position_estimate)
+        if current_distance < self.distance_nextwaypoint: 
+            if(self.load_next_waypoint()): 
+                finished = True
+        
+        # Weiterverarbeitung analog zu Mode 3:
+        self.update_position_pids()
+        
+        desired_x_vel = self.desired_global_x_vel
+        desired_y_vel = self.desired_global_y_vel
+        desired_z_vel = self.desired_global_z_vel
+        
+        return desired_x_vel, desired_y_vel, desired_z_vel, finished
+
+
 
     def load_next_waypoint(self):
         self.current_waypoint_index += 1
@@ -268,7 +295,6 @@ class LLC2:
 
         if self.current_waypoint_index >= len(waypoints)-1:
             self.current_waypoint_index = len(waypoints)-1  # oder setze current_waypoint_index auf len(waypoints)-1, wenn man anhalten möchte
-            print("faustin, die waypoint liste ist fertig!")
             return True
         
 
