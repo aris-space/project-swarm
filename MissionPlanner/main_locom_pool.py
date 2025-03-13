@@ -15,6 +15,8 @@ from Utils.utils_functions import *
 from MissionPlanner.swarm_storage import *
 from Hardware.Integrated_Sensors.Drone_Sensors import *
 from Hardware.Xsens_IMU.Xsens_IMU import *
+from Controls.v1.single_agent_controller.controllers.low_level_ctrl_2 import *
+from Controls.v1.utils import CONSTANTS
 #from data_classes import *
 
 
@@ -38,7 +40,7 @@ def sensor_thread():
     sensor_poll_interval = 0.1  # Polling frequency in seconds
 
     while True:
-        
+        """
         # Process waterlinked localization data
         try:
             # This call may block for up to 2 seconds if no new localization data is available.
@@ -82,7 +84,7 @@ def sensor_thread():
             print(f"Error reading depth sensor: {e}")
 
         time.sleep(sensor_poll_interval)
-
+        """
 
 def communication_thread():
     """
@@ -92,7 +94,7 @@ def communication_thread():
     - Updates the swarm storage when new data is received,
     - And at a random moment within the slot, transmits its own formatted data.
     """
-    slot_duration = 0.5  # Slot duration in seconds
+    slot_duration = 0.2 # Slot duration in seconds
 
     while True:
         slot_start = time.time()
@@ -107,11 +109,11 @@ def communication_thread():
                 if msg is not None:
                     print(f"Received message: {msg}")
                     # For now, update the swarm data with dummy received data !!
-                    received_data = [
-                        2, 1.23, 6.56, 7.89, 10.0, 5.0, 15.0, 22.5, 1.02, 543,
-                        [2, 1, 1, 1, 1, 1, 1, 1, 0, 2]
-                    ]
-                    swarm_data.update_from_received(received_data)
+                    #received_data = [
+                    #    2, 1.23, 6.56, 7.89, 10.0, 5.0, 15.0, 22.5, 1.02, 543,
+                    #    [2, 1, 1, 1, 1, 1, 1, 1, 0, 2]
+                    #]
+                    swarm_data.update_from_received(msg)
             except Exception as e:
                 print(f"Communication error while receiving: {e}")
 
@@ -119,7 +121,9 @@ def communication_thread():
             if not transmitted and time.time() >= transmit_time:
                 try:
                     # Extract the message to send from the swarm data.
-                    message_to_send = swarm_data.raw_drones[drone_id].format_drone_data()
+                    localization = [52.1212, 15.232, 89.1223]
+                    swarm_data.filtered_drones[drone_id].update_position(values=localization)
+                    message_to_send = swarm_data.filtered_drones[drone_id].format_drone_data()
                     #message_to_send = swarm_data.filtered_drones[drone_id].format_drone_data()
                     lora_transceiver.transmit_LoRa(message_to_send)
                     transmitted = True
@@ -129,7 +133,7 @@ def communication_thread():
             # Short sleep to avoid busy-waiting.
             time.sleep(0.01)
 
-def control_thread():
+def control_thread(pos_x, pos_y, pos_z):
     """
     Continuously runs the control loop.
     Reads current drone state from swarm storage and, in a full implementation,
@@ -139,6 +143,22 @@ def control_thread():
 
     while True:
         try:     
+
+            drone = swarm_data.raw_drones[2]
+            # Check if we have previous data and compare positions
+            if drone.last_data is not None and drone.position == drone.last_data.position:
+                print("Old data")
+            else:
+                print(drone.position)
+            #velocity = control_test.update_w_mode6()
+            #print(velocity)
+            """
+            print(pos_x)
+            #new_position = control_test.update_global_position(pos.x, pos.y, pos.z) #change format
+            desired_log_filename = 'desired_velocities.log'
+            open(desired_log_filename, 'w').close()
+
+            
             start_time = time.time()  # Start the timer
             imu.receive_input_xsens()  # Process one line from the IMU
             end_time = time.time()  # Stop the timer
@@ -164,7 +184,7 @@ def control_thread():
 
             swarm_data.filtered_drones[drone_id].update_quat_offsets(quat_offsets_values)
             print("Drone 1 quaternion offsets:", swarm_data.filtered_drones[drone_id].quat_offsets.qw)
-
+            """
 
         except Exception as e:
             print(f"Control error: {e}")
@@ -186,12 +206,14 @@ if __name__ == "__main__":
     filtered_data = DroneFilteredData()
     swarm_data = SwarmSensorData()  # Stores data for all drones
 
-    log_data_csv = DataLogger(f"drone_{drone_id}_log.csv") 
-
     lora_transceiver = LoRa_Transceiver(device_id=drone_id, slot_duration=4)
     get_localization = WaterLinked(base_url="http://192.168.8.108", poll_interval=1.0, test_mode=True)
     Keller_Sensor = TemperaturePressure() #need sudo pigpiod in terminal!!!!
 
+    pid_params = CONSTANTS['pid_params']
+    init_params = CONSTANTS['init_params']
+
+    control_test = LLC2(pid_params, init_params)
     imu = Xsens_IMU()
 
 
@@ -204,10 +226,16 @@ if __name__ == "__main__":
 
     sensor_thread_obj = threading.Thread(target=sensor_thread, name="SensorThread", daemon=True)
     communication_thread_obj = threading.Thread(target=communication_thread, name="CommThread", daemon=True)
-    control_thread_obj = threading.Thread(target=control_thread, name="ControlThread", daemon=True)
+
+    pos_x = swarm_data.raw_drones[drone_id].position.x
+    pos_y = swarm_data.raw_drones[drone_id].position.y
+    pos_z = swarm_data.raw_drones[drone_id].position.z
+
+
+    control_thread_obj = threading.Thread(target=control_thread, name="ControlThread", args = (pos_x, pos_y, pos_z), daemon=True)
 
     #sensor_thread_obj.start()
-    #communication_thread_obj.start()
+    communication_thread_obj.start()
     control_thread_obj.start()
 
 
@@ -224,6 +252,7 @@ if __name__ == "__main__":
 
     while True:
         time.sleep(1)
+
 
 
 

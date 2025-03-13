@@ -1,8 +1,8 @@
-import smbus2
 import time
 import struct
-import pigpio
-
+import smbus2
+from smbus2 import i2c_msg
+from smbus2 import SMBus
 
 class BatterySensors:
     
@@ -11,7 +11,7 @@ class BatterySensors:
 
     def __init__(self, i2c_bus=1):
         # Initialize I2C bus for Raspberry Pi (or similar)
-        self.bus = smbus2.SMBus(i2c_bus)
+        self.bus = SMBus(i2c_bus)
         # Initialize battery tube data dictionaries
         self.battery_tube_A = {"temperature": None, "humidity": None, "Bat_temperature": None}
         self.battery_tube_B = {"temperature": None, "humidity": None, "Bat_temperature": None}
@@ -80,8 +80,8 @@ class BatterySensors:
 class TemperaturePressure:
     
     def __init__(self, i2c_bus=1, sensor_address=0x40):
-        self.pi = pigpio.pi()  # Connect to the pigpio daemon
-        self.handle = self.pi.i2c_open(i2c_bus, sensor_address)  # Open I2C
+        self.bus = SMBus(i2c_bus)
+        self.sensor_address = sensor_address
         self.zero_air_pressure = None  # Initial air pressure reference
 
     def crc8(self, data):
@@ -95,22 +95,43 @@ class TemperaturePressure:
         return (crc >> 8) & 0xFF
 
     def read_sensor_float(self, regAddr):
+        # Build the command request exactly as before.
         request = [0x20, regAddr]
         request.append(self.crc8(request))
-        self.pi.i2c_write_device(self.handle, bytes(request))
+        
+        try:
+            # Use i2c_msg to write the exact bytes (no extra command byte)
+            write_msg = i2c_msg.write(self.sensor_address, request)
+            self.bus.i2c_rdwr(write_msg)
+        except Exception as e:
+            print(f"Write error: {e}")
+            return None
+        
         time.sleep(0.02)  # Wait for sensor data
-        count, data = self.pi.i2c_read_device(self.handle, 7)
-        if count < 7:
-            print("\n\n\n>>>>>>>> ERROR: read 7 bytes\n\n\n")
+        
+        try:
+            # Use i2c_msg to read 7 bytes from the sensor.
+            read_msg = i2c_msg.read(self.sensor_address, 7)
+            self.bus.i2c_rdwr(read_msg)
+            data = list(read_msg)
+        except Exception as e:
+            print(f"Read error: {e}")
             return None
-        response = list(data)
-        if self.crc8(response[:6]) != response[6]:
-            print("\n\n\n>>>>>>>> ERROR: CRC\n\n\n")
+        
+        if len(data) < 7:
+            print("ERROR: read less than 7 bytes")
             return None
-        if (response[0] & 0x10) == 0:
-            print("\n\n\n>>>>>>>> ERROR: ready flag\n\n\n")
+        
+        if self.crc8(data[:6]) != data[6]:
+            print("ERROR: CRC mismatch")
             return None
-        raw = (response[2] << 24) | (response[3] << 16) | (response[4] << 8) | response[5]
+        
+        if (data[0] & 0x10) == 0:
+            print("ERROR: sensor not ready")
+            return None
+        
+        # Combine the bytes to form a 32-bit raw value and convert to float.
+        raw = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5]
         return struct.unpack("!f", struct.pack("!I", raw))[0]
 
     def get_depth(self):
@@ -121,7 +142,6 @@ class TemperaturePressure:
             return None
         if self.zero_air_pressure is None:
             self.zero_air_pressure = pressure
-        #print("P=", pressure, "bar")
         depth = (pressure - self.zero_air_pressure) * 100000 / (g * density)
         return round(depth, 3)
 
@@ -132,8 +152,7 @@ class TemperaturePressure:
         return round(temp, 1)
 
     def close(self):
-        self.pi.i2c_close(self.handle)
-        self.pi.stop()
+        self.bus.close()
  
 
 
