@@ -17,6 +17,8 @@ from Hardware.Integrated_Sensors.Drone_Sensors import *
 from Hardware.Xsens_IMU.Xsens_IMU import *
 from Controls.v1.single_agent_controller.controllers.low_level_ctrl_2 import *
 from Controls.v1.utils import CONSTANTS
+from Controls.v1.utils.constants2 import MAX_VEL
+
 #from data_classes import *
 
 
@@ -114,6 +116,7 @@ def communication_thread():
                     #    [2, 1, 1, 1, 1, 1, 1, 1, 0, 2]
                     #]
                     swarm_data.update_from_received(msg)
+                
             except Exception as e:
                 print(f"Communication error while receiving: {e}")
 
@@ -133,7 +136,7 @@ def communication_thread():
             # Short sleep to avoid busy-waiting.
             time.sleep(0.01)
 
-def control_thread(pos_x, pos_y, pos_z):
+def control_thread():
     """
     Continuously runs the control loop.
     Reads current drone state from swarm storage and, in a full implementation,
@@ -144,14 +147,41 @@ def control_thread(pos_x, pos_y, pos_z):
     while True:
         try:     
 
-            drone = swarm_data.raw_drones[2]
-            # Check if we have previous data and compare positions
-            if drone.last_data is not None and drone.position == drone.last_data.position:
-                print("Old data")
-            else:
-                print(drone.position)
-            #velocity = control_test.update_w_mode6()
-            #print(velocity)
+            # Initialisiere den Low-Level Controller (LLC) mit den Konstanten aus CONSTANTS
+            print("Initializing")
+            open('data_log.log', 'w').close()
+            
+            llc = LLC2(CONSTANTS['pid_params'], CONSTANTS['init_params'], MAX_VEL)
+            # Setze den einzelnen Waypoint als globales Ziel
+            llc.global_position_target = np.array([waypoints[0]['x'], waypoints[0]['y'], waypoints[0]['z']])
+            llc.global_orientation_target_quat = llc.euler_zyx_to_quaternion(
+                waypoints[0]['yaw'], waypoints[0]['pitch'], waypoints[0]['roll']
+            )
+            
+            num_steps = 1000
+            
+            with open('data_log.log', 'ab') as log:
+                for i in range(0, num_steps):
+
+                    pos_x = swarm_data.raw_drones[2].position.x
+                    pos_y = swarm_data.raw_drones[2].position.y
+                    pos_z = swarm_data.raw_drones[2].position.z
+
+                    desired_x_vel, desired_y_vel, desired_z_vel, finished = llc.update_w_mode6()
+                    
+                    # Logge die Desired Velocities in das Array und in die separate Logdatei
+
+                    np.savetxt(log, np.array([desired_x_vel, desired_y_vel, desired_z_vel, pos_x, pos_y, pos_z]).reshape(1, -1), delimiter=',')
+                    
+                    if finished:
+                        print("alle waypoints finished")
+                        break
+                    
+                    llc.update_global_position(pos_x, pos_y, pos_z)
+                    time.sleep(0.1) 
+                    
+            data = np.loadtxt('data_log.log',delimiter=',')
+
             """
             print(pos_x)
             #new_position = control_test.update_global_position(pos.x, pos.y, pos.z) #change format
@@ -210,13 +240,6 @@ if __name__ == "__main__":
     get_localization = WaterLinked(base_url="http://192.168.8.108", poll_interval=1.0, test_mode=True)
     Keller_Sensor = TemperaturePressure() #need sudo pigpiod in terminal!!!!
 
-    pid_params = CONSTANTS['pid_params']
-    init_params = CONSTANTS['init_params']
-
-    control_test = LLC2(pid_params, init_params)
-    imu = Xsens_IMU()
-
-
     #GET LOCALIZATION: 
 
     #position_data = get_localization.get_latest_position(timeout = 2)
@@ -232,10 +255,10 @@ if __name__ == "__main__":
     pos_z = swarm_data.raw_drones[drone_id].position.z
 
 
-    control_thread_obj = threading.Thread(target=control_thread, name="ControlThread", args = (pos_x, pos_y, pos_z), daemon=True)
+    control_thread_obj = threading.Thread(target=control_thread, name="ControlThread", daemon=True)
 
     #sensor_thread_obj.start()
-    communication_thread_obj.start()
+    #communication_thread_obj.start()
     control_thread_obj.start()
 
 
