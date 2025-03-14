@@ -52,9 +52,9 @@ class MCA:
         if self.reversed:
             #print("is reversed: ", T(-thrust))
             if thrust >= 0:
-                pi.set_servo_pulsewidth(self.pin, T(-thrust)) # case if motor is mounted opposite to standard, dead zone adj
+                pi.set_servo_pulsewidth(self.pin, T(thrust)) # case if motor is mounted opposite to standard, dead zone adj
             else:
-                pi.set_servo_pulsewidth(self.pin, T(-thrust))
+                pi.set_servo_pulsewidth(self.pin, T(thrust))
 
         else:
             if thrust >= 0:
