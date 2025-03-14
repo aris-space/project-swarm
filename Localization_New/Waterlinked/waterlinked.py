@@ -2,15 +2,14 @@ import queue
 import requests
 import threading
 import time
+import random
 
 class WaterLinked:
-    def __init__(self, base_url, poll_interval=1.0, test_mode=False):
-    def __init__(self, base_url, poll_interval=1.0, test_mode=False):
+    def __init__(self, base_url, poll_interval=4.0, test_mode=False):
         """
         Initializes the WaterLinked instance.
 
         Parameters:
-        - base_url: URL of the WaterLinked system (if connected to swarm: "http://192.168.8.108", if connected to UnderwaterGPS: "http://192.168.2.94")
         - base_url: URL of the WaterLinked system (if connected to swarm: "http://192.168.8.108", if connected to UnderwaterGPS: "http://192.168.2.94")
         - poll_interval: How often (in seconds) to fetch new data.
         - test_mode: If True, dummy data is returned instead of making HTTP calls.
@@ -18,7 +17,6 @@ class WaterLinked:
         self.base_url = base_url
         self.poll_interval = poll_interval
         self.test_mode = test_mode
-        self.data_condition = threading.Condition() # used to signal when new data is available 
         self.data_condition = threading.Condition() # used to signal when new data is available 
         self.latest_data = None  # Holds the most recent data (a dict)
         self.running = True
@@ -35,10 +33,6 @@ class WaterLinked:
                 with self.data_condition:
                     self.latest_data = data
                     self.data_condition.notify_all()                
-                # signal that new data is available
-                with self.data_condition:
-                    self.latest_data = data
-                    self.data_condition.notify_all()                
             time.sleep(self.poll_interval)
 
     def _fetch_data(self):
@@ -48,7 +42,12 @@ class WaterLinked:
         """
         endpoint = f"{self.base_url}/api/v1/position/acoustic/filtered"
         if self.test_mode:
-            return {"x": 1.23, "y": 4.56, "z": 7.89}
+            return {
+                "x": round(random.uniform(0, 10), 2),
+                "y": round(random.uniform(0, 10), 2),
+                "z": round(random.uniform(0, 10),2)
+            }
+            
         try:
             response = requests.get(endpoint)
         except requests.exceptions.RequestException as exc:
@@ -62,7 +61,7 @@ class WaterLinked:
         return response.json()
 
     def get_latest_position(self, timeout=None):
-    def get_latest_position(self, timeout=None):
+
         """
         Returns the latest position as a formatted string 'x, y, z'.
         If no data is available yet, returns an empty string.
@@ -88,28 +87,7 @@ class WaterLinked:
                     y = brim_size
                 elif y > 2.5 - brim_size:
                     y = 2.5 - brim_size
-
-                return [x, y, z]
-            else:
-                return ""
-        with self.data_condition:
-            if self.latest_data is None:
-                self.data_condition.wait(timeout=timeout) # wait until new data is available
-            if self.latest_data:
-                x = round(self.latest_data.get('x',0),2)
-                y = round(self.latest_data.get('y',0),2)
-                z = round(self.latest_data.get('z',0),2)
-
-                brim_size = 0.3 # distance from wall
-                if x < brim_size:
-                    x = brim_size
-                elif x > 5 - brim_size:
-                    x = 5 - brim_size
-                if y < brim_size:
-                    y = brim_size
-                elif y > 2.5 - brim_size:
-                    y = 2.5 - brim_size
-
+                    
                 return [x, y, z]
             else:
                 return None
@@ -121,7 +99,3 @@ class WaterLinked:
             self.thread.join()
 
 
-# Create a single instance of WaterLinked for use in the communications module.
-# The communications code only needs to call waterlinked_instance.get_latest_position_string().
-waterlinked_instance = WaterLinked(base_url="http://192.168.7.1", poll_interval=1.0, test_mode=True)
-print(waterlinked_instance.get_latest_position())
