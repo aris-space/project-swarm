@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 #from single_agent_controller.controllers.depth_ctrl import depth_ctrl
-from single_agent_controller.controllers.pid_ctrl import PID
-from single_agent_controller.controllers.pid_ctrl_w_error import PID_w_error
-from single_agent_controller.controllers.ultraPos import Position
-from utils.waypoints import *
+from Controls.v1.single_agent_controller.controllers.pid_ctrl import PID
+from Controls.v1.single_agent_controller.controllers.pid_ctrl_w_error import PID_w_error
+from Controls.v1.single_agent_controller.controllers.ultraPos import Position
+from Controls.v1.utils.waypoints import *
 
 #from v1.single_agent_controller.controllers.ca_system import SCA
 
-from utils.constants2 import *
+from Controls.v1.utils.constants2 import *
 
 from scipy.spatial.transform import Rotation as R
 import numpy as np
@@ -241,14 +241,11 @@ class LLC2:
         """
 
         finished = False
-
-        # Berechne den aktuellen Abstand zum Zielpunkt
+        # Berechne den aktuellen Abstand zum Zielpunkt, wenn das Fahrzeug weniger als 0,5 Meter vom Ziel entfernt ist, lade den nächsten Wegpunkt
         current_distance = np.linalg.norm(self.global_position_target - self.global_position_estimate)
-        # Wenn das Fahrzeug weniger als 0,5 Meter vom Ziel entfernt ist, lade den nächsten Wegpunkt
         if current_distance < self.distance_nextwaypoint: 
             if(self.load_next_waypoint()): 
                 finished = True
-            
         
         # Weiterverarbeitung analog zu Mode 3:
         self.update_angle_pids()
@@ -257,9 +254,39 @@ class LLC2:
         
         # Berechne die Steuerbefehle: Torques und Thrusts
         torquex, torquey, torquez = self.update_angle_rate_pids()
-        thrustx, thrusty, thrustz = self.update_veloctiy_pids()
+        #thrustx, thrusty, thrustz = self.update_veloctiy_pids()
+        desired_x_vel = self.desired_local_x_vel
+        desired_y_vel = self.desired_local_y_vel
+        desired_z_vel = self.desired_local_z_vel
         
-        return thrustx, thrusty, thrustz, torquex, torquey, torquez, finished
+        return desired_x_vel, desired_y_vel, desired_z_vel, torquex, torquey, torquez, finished
+    
+
+    def update_w_mode6(self):
+        """
+        Mode 5:
+        Während der Fahrt zum aktuellen Wegpunkt wird geprüft, ob das Fahrzeug weniger als 0,5 Meter
+        vom aktuellen Ziel entfernt ist. Falls ja, wird automatisch der nächste Wegpunkt geladen,
+        sodass das Fahrzeug ohne abruptes Abbremsen in den nächsten Zielpfad übergeht.
+        """
+
+        finished = False
+        # Berechne den aktuellen Abstand zum Zielpunkt, wenn das Fahrzeug weniger als 0,5 Meter vom Ziel entfernt ist, lade den nächsten Wegpunkt
+        current_distance = np.linalg.norm(self.global_position_target - self.global_position_estimate)
+        if current_distance < self.distance_nextwaypoint: 
+            if(self.load_next_waypoint()): 
+                finished = True
+        
+        # Weiterverarbeitung analog zu Mode 3:
+        self.update_position_pids()
+        
+        desired_x_vel = self.desired_global_x_vel
+        desired_y_vel = self.desired_global_y_vel
+        desired_z_vel = self.desired_global_z_vel
+        
+        return desired_x_vel, desired_y_vel, desired_z_vel, finished
+
+
 
     def load_next_waypoint(self):
         self.current_waypoint_index += 1
@@ -268,7 +295,6 @@ class LLC2:
 
         if self.current_waypoint_index >= len(waypoints)-1:
             self.current_waypoint_index = len(waypoints)-1  # oder setze current_waypoint_index auf len(waypoints)-1, wenn man anhalten möchte
-            print("faustin, die waypoint liste ist fertig!")
             return True
         
 

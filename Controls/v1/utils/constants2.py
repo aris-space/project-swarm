@@ -5,7 +5,7 @@ PLANNER_FREQ= 0.1
 LOC_FREQ = 5
 PRES_FREQ = 100
 IMU_FREQ = 100
-LLC_FREQ = 50
+LLC_FREQ = 100
 SIM_FREQ = 200
 
 # angle rate 2-5x schneller als angle
@@ -72,7 +72,7 @@ ESC_NEUTRAL = 1500           # Neutral pulse width (1.5 ms)
 CONTROLLER_TEST_DURATION = 600
 
 #Saturation limit for PID response
-MAX_SAT = 0.3
+MAX_VEL = 20
 
 #distance to update to next waypoint
 DISTANCE_NEXTWAYPOINT = 5
