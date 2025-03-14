@@ -2,8 +2,14 @@ import pigpio
 import time
 from scipy.interpolate import interp1d
 
-# map PWM timing to range of -100 to 100
-T = interp1d([-100,100],[1100,1900])
+# map PWM timing to range of -100 to 100 => linearisation
+def T (thrust):
+  # returns PWM for Forward_thrust
+  if thrust > 0 and thrust <= 100: return 0.000479*thrust**3 - 0.07842*thrust**2 + 6.857*thrust + 1512  
+  # returns PWM for Backward_thrust 
+  elif thrust < 0 and thrust >= -100: return -0.0006707*thrust**3 - 0.1001*thrust**2 - 7.039*thrust + 1509
+  # returns 0 for PWM if thrust is out of range or 0  
+  else: return 0
 
 
 # Setup change 
@@ -41,12 +47,12 @@ class MCA:
         if int(thrust) not in range(-40,41): # warning. 100 is veeryy fast! If safety doesn't trigger. Run!
             raise ValueError(f"Speed must be in range [-40,40] and is currently {thrust}")
 
-        
+
         #check if eversed
         if self.reversed:
             #print("is reversed: ", T(-thrust))
             if thrust >= 0:
-                pi.set_servo_pulsewidth(self.pin, T(-thrust -5)) # case if motor is mounted opposite to standard, dead zone adj
+                pi.set_servo_pulsewidth(self.pin, T(-thrust)) # case if motor is mounted opposite to standard, dead zone adj
             else:
                 pi.set_servo_pulsewidth(self.pin, T(-thrust))
 
@@ -54,6 +60,6 @@ class MCA:
             if thrust >= 0:
                 pi.set_servo_pulsewidth(self.pin, T(thrust)) # normal case
             else:
-                pi.set_servo_pulsewidth(self.pin, T(thrust -5)) # dead zone adj
+                pi.set_servo_pulsewidth(self.pin, T(thrust)) # dead zone adj
 
         return None
