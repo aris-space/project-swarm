@@ -72,7 +72,7 @@ ESC_NEUTRAL = 1500           # Neutral pulse width (1.5 ms)
 CONTROLLER_TEST_DURATION = 600
 
 #Saturation limit for PID response
-MAX_VEL = 20
+MAX_VEL = 6.0
 
 #distance to update to next waypoint
 DISTANCE_NEXTWAYPOINT = 5

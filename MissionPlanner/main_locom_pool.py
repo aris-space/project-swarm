@@ -6,15 +6,15 @@ import random
 import numpy as np
 import serial
 import keyboard
-import zmq
+#import zmq
 import json
 
 sys.path.insert(0, "/shared_folder/project-swarm")
 
 from Communication.transceive_functions import *
 from Localization_New.Waterlinked.waterlinked import *
-from Utils.utils_functions import *
-from MissionPlanner.swarm_storage import *
+from Drone_Instance.utils_functions import *
+from MissionPlanner.swarm_storage import *  # This module now contains the SwarmSensorDataSingleton class
 from Hardware.Integrated_Sensors.Drone_Sensors import *
 from Hardware.Xsens_IMU.Xsens_IMU import *
 from Controls.v1.single_agent_controller.controllers.low_level_ctrl_2 import *
@@ -23,13 +23,12 @@ from Controls.v1.utils.constants2 import MAX_VEL
 
 #from data_classes import *
 
-
 # Global variables 
 last_no_temperature_time = None
 last_no_depth_time = None
 
 #------THREADING FUNCTIONS------
-def sensor_thread():
+def sensor_thread(swarm_data, drone_id, get_localization):
     """
     Continuously reads sensor data and updates swarm storage.
     Processes temperature, depth (from Keller_Sensor), and waterlinked localization data.
@@ -44,7 +43,7 @@ def sensor_thread():
     sensor_poll_interval = 0.1  # Polling frequency in seconds
 
     while True:
-        """
+        
         # Process waterlinked localization data
         try:
             # This call may block for up to 2 seconds if no new localization data is available.
@@ -56,7 +55,9 @@ def sensor_thread():
                 print(f"Updated waterlinked: {localization}")
         except Exception as e:
             print(f"Error reading waterlinked localization: {e}")
-
+        #posx = swarm_data.raw_drones[drone_id].position.x
+        #print(posx)
+        """
         # Process temperature sensor data (from Keller_Sensor)
         try:
             temperature = Keller_Sensor.get_temperature()  # Expected to return a temperature value or None
@@ -86,11 +87,11 @@ def sensor_thread():
                 print(f"Updated sensor depth: {depth}")
         except Exception as e:
             print(f"Error reading depth sensor: {e}")
-
-        time.sleep(sensor_poll_interval)
         """
+        time.sleep(sensor_poll_interval)
+        
 
-def communication_thread():
+def communication_thread(swarm_data, drone_id, lora_transceiver):
     """
     Continuously handles inter-drone communication.
     In each 0.5 second slot, the drone:
@@ -138,14 +139,13 @@ def communication_thread():
             # Short sleep to avoid busy-waiting.
             time.sleep(0.01)
 
-def control_thread():
+def control_thread(swarm_data, drone_id, CONSTANTS, MAX_VEL, waypoints):
     """
     Continuously runs the control loop.
     Reads current drone state from swarm storage and, in a full implementation,
     would run filters/controls to determine actuator commands.
     """
     control_poll_interval = 0.1  # Control loop frequency
-
 
     # ZeroMQ setup
     context = zmq.Context()
@@ -156,7 +156,6 @@ def control_thread():
 
     while True:
         try:     
-
             # Initialisiere den Low-Level Controller (LLC) mit den Konstanten aus CONSTANTS
             print("Initializing")
             open('data_log.log', 'w').close()
@@ -200,6 +199,9 @@ def control_thread():
                             "pos_x": pos_x,  
                             "pos_y": pos_y,  
                             "pos_z": pos_z,
+                            "des_vx": desired_x_vel,
+                            "des_vy": desired_y_vel,
+                            "des_vz": desired_z_vel,
                             },
                         }
 
@@ -208,7 +210,6 @@ def control_thread():
                     socket.send_string(json.dumps(value))
                     
             data = np.loadtxt('data_log.log',delimiter=',')
-
 
             socket.close()
             context.term()
@@ -258,7 +259,6 @@ def control_thread():
 
 if __name__ == "__main__":
     
-
     drone_id = get_drone_id()
     print(f"Drone ID: {drone_id}")
 
@@ -266,11 +266,11 @@ if __name__ == "__main__":
 
     raw_data = DroneRawData()
     filtered_data = DroneFilteredData()
-    swarm_data = SwarmSensorData()  # Stores data for all drones
+    swarm_data = SwarmSensorDataSingleton()  # Stores data for all drones
 
     lora_transceiver = LoRa_Transceiver(device_id=drone_id, slot_duration=4)
     get_localization = WaterLinked(base_url="http://192.168.8.108", poll_interval=1.0, test_mode=True)
-    Keller_Sensor = TemperaturePressure() #need sudo pigpiod in terminal!!!!
+    Keller_Sensor = TemperaturePressure()  # need sudo pigpiod in terminal!!!!
 
     #GET LOCALIZATION: 
 
@@ -279,19 +279,29 @@ if __name__ == "__main__":
     # New localization data: only the current position [x, y, z]
     position_data = [71.21, 62.10, 76.21]
 
-    sensor_thread_obj = threading.Thread(target=sensor_thread, name="SensorThread", daemon=True)
-    communication_thread_obj = threading.Thread(target=communication_thread, name="CommThread", daemon=True)
+    # Create and start threads with explicit dependency injection
+    sensor_thread_obj = threading.Thread(
+        target=sensor_thread,
+        args=(swarm_data, drone_id, get_localization),
+        name="SensorThread",
+        daemon=True
+    )
+    communication_thread_obj = threading.Thread(
+        target=communication_thread,
+        args=(swarm_data, drone_id, lora_transceiver),
+        name="CommThread",
+        daemon=True
+    )
+    control_thread_obj = threading.Thread(
+        target=control_thread,
+        args=(swarm_data, drone_id, CONSTANTS, MAX_VEL, waypoints),
+        name="ControlThread",
+        daemon=True
+    )
 
-    pos_x = swarm_data.raw_drones[drone_id].position.x
-    pos_y = swarm_data.raw_drones[drone_id].position.y
-    pos_z = swarm_data.raw_drones[drone_id].position.z
-
-
-    control_thread_obj = threading.Thread(target=control_thread, name="ControlThread", daemon=True)
-
-    #sensor_thread_obj.start()
-    communication_thread_obj.start()
-    control_thread_obj.start()
+    sensor_thread_obj.start()
+    #communication_thread_obj.start()
+    #control_thread_obj.start()
 
 
     """
@@ -304,11 +314,5 @@ if __name__ == "__main__":
     #control_thread_obj.start()
     """
 
-
     while True:
         time.sleep(1)
-
-
-
-
-

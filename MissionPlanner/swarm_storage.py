@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 from datetime import datetime
 import numpy as np
+import threading
 
 # --- Common Structures ---
 @dataclass
@@ -261,3 +262,20 @@ class SwarmSensorData:
     @position.setter
     def position(self, value: Optional[Position]) -> None:
         self._position = value
+
+class SwarmSensorDataSingleton(SwarmSensorData):
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, *args, **kwargs):
+        # Ensure __init__ only runs once.
+        if not hasattr(self, '_initialized'):
+            super().__init__(*args, **kwargs)
+            self._initialized = True
